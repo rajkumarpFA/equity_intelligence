@@ -1,0 +1,40 @@
+# Environment & Secrets
+.env
+.env.local
+.env.*.local
+
+# Python / Backend
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+htmlcov/
+.coverage
+
+# Node / Frontend
+node_modules/
+frontend/.next/
+frontend/out/
+frontend/dist/
+frontend/coverage/
+*.tsbuildinfo
+
+# Local Persistent Data & Backups
+storage/
+backups/
+*.dump
+*.sql
+*.sqlite
+*.db
+
+# Logs & OS
+*.log
+.DS_Store
+Thumbs.db

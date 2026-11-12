@@ -1,0 +1,75 @@
+version: '3.7'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: equity_intelligence_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-equity_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-equity_local_password}
+      POSTGRES_DB: ${POSTGRES_DB:-equity_intelligence}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-equity_user} -d ${POSTGRES_DB:-equity_intelligence}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: equity_intelligence_backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-equity_user}:${POSTGRES_PASSWORD:-equity_local_password}@db:5432/${POSTGRES_DB:-equity_intelligence}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      STORAGE_DIR: /app/storage
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    volumes:
+      - uploaded_docs:/app/storage
+    depends_on:
+      - db
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health', timeout=3)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 15s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
+    container_name: equity_intelligence_frontend
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
+      INTERNAL_API_URL: ${INTERNAL_API_URL:-http://backend:8000/api/v1}
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3000').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))\""]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  postgres_data:
+    name: equity_intelligence_postgres_data
+  uploaded_docs:
+    name: equity_intelligence_uploaded_docs

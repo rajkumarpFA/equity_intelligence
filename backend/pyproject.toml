@@ -1,0 +1,38 @@
+[project]
+name = "equity-intelligence-backend"
+version = "0.1.0"
+description = "Personal Indian Stock Research & Investment Intelligence Platform Backend"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.0,<1.0",
+    "uvicorn[standard]>=0.30.0,<1.0",
+    "pydantic>=2.9.0,<3.0",
+    "pydantic-settings>=2.5.0,<3.0",
+    "sqlalchemy>=2.0.35,<2.1",
+    "psycopg[binary]>=3.2.0,<4.0",
+    "alembic>=1.13.0,<2.0",
+    "pandas>=2.2.0,<3.0",
+    "numpy>=1.26.0,<3.0",
+    "httpx>=0.27.0,<1.0",
+    "apscheduler>=3.10.4,<4.0",
+    "python-multipart>=0.0.12,<1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0,<9.0",
+    "pytest-asyncio>=0.24.0,<1.0",
+    "ruff>=0.6.0,<1.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+ignore = ["B008"]
