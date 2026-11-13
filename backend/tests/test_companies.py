@@ -133,3 +133,52 @@ def test_company_api_endpoints(client: TestClient):
     sector_res = client.get("/api/v1/companies/taxonomy/sectors")
     assert sector_res.status_code == 200
     assert len(sector_res.json()) >= 1
+
+
+def test_auto_sector_resolution_on_import(db_session: Session):
+    """Verify that importing or resolving a company automatically populates sector and industry taxonomy."""
+    service = CompanyService(db_session)
+
+    # 1. Test sector auto-resolution for Technology
+    sec_tech, ind_tech, is_fin_tech = service._resolve_sector_and_industry(
+        "INFY", "NSE", "Infosys Limited"
+    )
+    assert sec_tech == "Technology"
+    assert "Technology" in ind_tech or "IT" in ind_tech
+    assert is_fin_tech is False
+
+    # 2. Test sector auto-resolution for Financials / Banks
+    sec_bank, ind_bank, is_fin_bank = service._resolve_sector_and_industry(
+        "SBIN", "NSE", "State Bank of India"
+    )
+    assert sec_bank == "Financials"
+    assert "Bank" in ind_bank or "Financial" in ind_bank
+    assert is_fin_bank is True
+
+    # 3. Test sector auto-resolution for Pharma
+    sec_pharma, ind_pharma, is_fin_pharma = service._resolve_sector_and_industry(
+        "SUNPHARMA", "NSE", "Sun Pharmaceutical Industries Limited"
+    )
+    assert sec_pharma == "Healthcare & Pharmaceuticals"
+    assert is_fin_pharma is False
+
+    # 4. Verify that when a company is added to DB, its sector and industry are populated
+    comp_create = CompanyCreate(
+        name="Infosys Limited",
+        isin="INE009A01021",
+        sector_name=sec_tech,
+        industry_name=ind_tech,
+        is_financial_sector=is_fin_tech,
+        securities=[
+            SecurityCreate(
+                exchange_code="NSE",
+                symbol="INFY",
+                is_primary=True,
+            )
+        ],
+    )
+    company = service.upsert_company(comp_create)
+    assert company.sector is not None
+    assert company.sector.name == "Technology"
+    assert company.industry is not None
+    assert company.is_financial_sector is False

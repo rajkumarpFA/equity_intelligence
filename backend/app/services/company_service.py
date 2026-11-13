@@ -1,8 +1,11 @@
 """Company service implementing stock discovery, taxonomy, and deduplication workflows."""
 
+import logging
 import math
 
 from sqlalchemy.orm import Session
+
+logger = logging.getLogger(__name__)
 
 from app.models.company import Company, Security
 from app.repositories.company_repository import CompanyRepository
@@ -160,6 +163,20 @@ class CompanyService:
 
     def get_company_by_id(self, company_id: int, refresh: bool = False) -> CompanyRead | None:
         company = self.repo.get_company_by_id(company_id)
+        if company and company.sector_id is None and company.securities:
+            prim = next((s for s in company.securities if s.is_primary), company.securities[0])
+            sec_name, ind_name, is_fin = self._resolve_sector_and_industry(
+                prim.symbol, prim.exchange.code, company.name
+            )
+            if sec_name:
+                sec = self.repo.get_or_create_sector(sec_name)
+                company.sector_id = sec.id
+                if ind_name:
+                    ind = self.repo.get_or_create_industry(sec.id, ind_name)
+                    company.industry_id = ind.id
+                company.is_financial_sector = is_fin
+                self.repo.db.commit()
+                self.repo.db.refresh(company)
         return self._format_company_read(company, refresh=refresh) if company else None
 
     def get_company_by_isin(self, isin: str) -> CompanyRead | None:
@@ -169,6 +186,186 @@ class CompanyService:
     def upsert_company(self, data: CompanyCreate) -> CompanyRead:
         company = self.repo.upsert_canonical_company(data)
         return self._format_company_read(company)
+
+    def _resolve_sector_and_industry(
+        self, symbol: str, exchange: str, company_name: str
+    ) -> tuple[str, str, bool]:
+        """Automatically resolve sector and industry taxonomy for Indian equities."""
+        clean_symbol = symbol.strip().upper()
+        clean_exchange = exchange.strip().upper()
+        clean_name = company_name.strip().upper()
+
+        # 1. Try Yahoo Finance search API (open, no auth required)
+        import httpx
+
+        ticker = f"{clean_symbol}.NS" if clean_exchange == "NSE" else f"{clean_symbol}.BO"
+        raw_sector = None
+        raw_industry = None
+
+        try:
+            r = httpx.get(
+                f"https://query1.finance.yahoo.com/v1/finance/search?q={ticker}",
+                headers={"User-Agent": "Mozilla/5.0"},
+                timeout=5.0,
+            )
+            if r.status_code == 200:
+                quotes = r.json().get("quotes", [])
+                for q in quotes:
+                    sym = q.get("symbol", "").upper()
+                    if sym in (ticker, clean_symbol):
+                        raw_sector = q.get("sectorDisp") or q.get("sector")
+                        raw_industry = q.get("industryDisp") or q.get("industry")
+                        break
+                # If exact ticker match wasn't in quotes, take the first equity quote
+                if not raw_sector and quotes:
+                    for q in quotes:
+                        if q.get("quoteType") == "EQUITY" and (q.get("sectorDisp") or q.get("sector")):
+                            raw_sector = q.get("sectorDisp") or q.get("sector")
+                            raw_industry = q.get("industryDisp") or q.get("industry")
+                            break
+        except (httpx.HTTPError, KeyError, IndexError, TypeError) as exc:
+            logger.debug("Sector search query failed for %s: %s", ticker, exc)
+
+        # 2. Map standard global sectors to canonical platform sectors
+        sector_map = {
+            "Financial Services": "Financials",
+            "Financial": "Financials",
+            "Technology": "Technology",
+            "Consumer Defensive": "Consumer Staples",
+            "Consumer Cyclical": "Consumer Discretionary",
+            "Healthcare": "Healthcare & Pharmaceuticals",
+            "Energy": "Energy & Petrochemicals",
+            "Industrials": "Capital Goods & Industrials",
+            "Basic Materials": "Metals & Mining",
+            "Communication Services": "Telecommunications & Media",
+            "Utilities": "Utilities & Power",
+            "Real Estate": "Real Estate & Infrastructure",
+        }
+
+        if raw_sector and raw_sector in sector_map:
+            resolved_sector = sector_map[raw_sector]
+            resolved_industry = raw_industry or f"{resolved_sector} Services"
+            is_financial = resolved_sector == "Financials" or any(
+                w in clean_name for w in ["BANK", "FINANCIAL", "FINANCE", "HOUSING", "INSURANCE"]
+            )
+            return resolved_sector, resolved_industry, is_financial
+
+        if raw_sector:
+            resolved_sector = raw_sector
+            resolved_industry = raw_industry or f"{raw_sector} Operations"
+            is_financial = any(
+                w in clean_name for w in ["BANK", "FINANCIAL", "FINANCE", "HOUSING", "INSURANCE"]
+            )
+            return resolved_sector, resolved_industry, is_financial
+
+        # 3. Intelligent heuristic keyword classification as deterministic fallback
+        if any(
+            w in clean_name
+            for w in [
+                "BANK",
+                "FINANCIAL",
+                "FINANCE",
+                "HOUSING FINANCE",
+                "INSURANCE",
+                "MUTUAL",
+                "SECURITIES",
+                "CAPITAL",
+            ]
+        ):
+            return "Financials", "Banking & Financial Services", True
+
+        if any(
+            w in clean_name
+            for w in [
+                "SOFTWARE",
+                "TECH",
+                "INFOTECH",
+                "DIGITAL",
+                "SYSTEMS",
+                "COMPUTERS",
+                "CONSULTANCY",
+                "INFOSYS",
+                "WIPRO",
+            ]
+        ):
+            return "Technology", "IT Services", False
+
+        if any(
+            w in clean_name
+            for w in [
+                "PHARMA",
+                "LABORATORIES",
+                "HEALTHCARE",
+                "BIO",
+                "DRUGS",
+                "HOSPITAL",
+                "MEDICINE",
+            ]
+        ):
+            return "Healthcare & Pharmaceuticals", "Pharmaceuticals", False
+
+        if any(w in clean_name for w in ["MOTORS", "AUTO", "TYRES", "AUTOMOTIVE", "VEHICLES"]):
+            return "Automotive", "Automobiles & Auto Components", False
+
+        if any(
+            w in clean_name
+            for w in ["ENERGY", "POWER", "SOLAR", "WIND", "PETRO", "REFINERY", "OIL", "GAS"]
+        ):
+            return "Energy & Petrochemicals", "Oil, Gas & Consumable Fuels", False
+
+        if any(
+            w in clean_name
+            for w in [
+                "STEEL",
+                "MINING",
+                "MINERALS",
+                "METALS",
+                "ALUMINIUM",
+                "COPPER",
+                "ZINC",
+                "IRON",
+            ]
+        ):
+            return "Metals & Mining", "Metals & Mining", False
+
+        if any(
+            w in clean_name
+            for w in [
+                "FOOD",
+                "BEVERAGES",
+                "BREWERIES",
+                "DAIRY",
+                "CONSUMER",
+                "SUGAR",
+                "TOBACCO",
+                "FMCG",
+            ]
+        ):
+            return "Consumer Goods", "Fast Moving Consumer Goods (FMCG)", False
+
+        if any(
+            w in clean_name
+            for w in [
+                "CEMENT",
+                "INFRA",
+                "ENGINEERING",
+                "CONSTRUCTION",
+                "PROJECTS",
+                "INFRASTRUCTURE",
+            ]
+        ):
+            return "Capital Goods & Industrials", "Engineering & Construction", False
+
+        if any(
+            w in clean_name
+            for w in ["TELECOM", "COMMUNICATIONS", "NETWORKS", "AIRTEL", "BROADBAND"]
+        ):
+            return "Telecommunications & Media", "Telecom Services", False
+
+        if any(w in clean_name for w in ["CHEMICALS", "FERTILIZERS", "ORGANICS", "PESTICIDES"]):
+            return "Chemicals", "Specialty Chemicals", False
+
+        return "Diversified", "Diversified Commercial Services", False
 
     def import_company_by_symbol(self, symbol: str, exchange: str = "NSE") -> CompanyRead:
         """On-demand lookup and addition of any NSE/BSE listed stock into local PostgreSQL."""
@@ -180,6 +377,18 @@ class CompanyService:
         for c in existing_list:
             for s in c.securities:
                 if s.symbol.upper() == clean_symbol and s.exchange.code.upper() == clean_exchange:
+                    # If existing company is missing a sector, automatically resolve and backfill it
+                    if c.sector_id is None:
+                        sec_name, ind_name, is_fin = self._resolve_sector_and_industry(
+                            clean_symbol, clean_exchange, c.name
+                        )
+                        sec = self.repo.get_or_create_sector(sec_name)
+                        ind = self.repo.get_or_create_industry(sec.id, ind_name)
+                        c.sector_id = sec.id
+                        c.industry_id = ind.id
+                        c.is_financial_sector = is_fin
+                        self.repo.db.commit()
+                        self.repo.db.refresh(c)
                     return self._format_company_read(c)
 
         # 2. Look up in Upstox instrument master (open public CDN)
@@ -233,15 +442,19 @@ class CompanyService:
                     f"Could not resolve stock '{clean_symbol}' on {clean_exchange}: {exc}"
                 ) from exc
 
-        # 3. Create canonical Company and Security mapping
+        # 3. Automatically resolve sector and industry taxonomy
+        sector_name, industry_name, is_financial = self._resolve_sector_and_industry(
+            clean_symbol, clean_exchange, name
+        )
+
+        # 4. Create canonical Company and Security mapping
         company_create = CompanyCreate(
             name=name,
             legal_name=name,
             isin=isin,
-            is_financial_sector=any(
-                w in name.upper()
-                for w in ["BANK", "FINANCIAL", "FINANCE", "HOUSING", "INSURANCE"]
-            ),
+            sector_name=sector_name,
+            industry_name=industry_name,
+            is_financial_sector=is_financial,
             securities=[
                 SecurityCreate(
                     exchange_code=clean_exchange,
@@ -254,7 +467,7 @@ class CompanyService:
         )
         company = self.repo.upsert_canonical_company(company_create)
 
-        # 4. Fetch initial price snapshot
+        # 5. Fetch initial price snapshot
         self.price_service.get_latest_quote(clean_symbol, clean_exchange, force_refresh=True)
 
         return self._format_company_read(company)
