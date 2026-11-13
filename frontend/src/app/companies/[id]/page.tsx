@@ -300,14 +300,40 @@ export default function CompanyDetailPage() {
                       {company.industry.name}
                     </span>
                   )}
-                  <Link
-                    href={`/compare?companies=${company.id}`}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--accent)]/30 bg-[var(--accent)]/10 px-3 py-1 text-xs font-bold text-[var(--accent)] hover:bg-[var(--accent)]/20 transition shadow-sm ml-auto"
-                    title={`Open Competitor Analysis for ${company.name}`}
-                  >
-                    <Users className="h-3.5 w-3.5" />
-                    <span>Compare with Peers</span>
-                  </Link>
+                  <div className="flex flex-wrap items-center gap-2 ml-auto">
+                    <Link
+                      href={`/valuation?company_id=${company.id}`}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-white/5 px-2.5 py-1 text-xs font-semibold text-[var(--text-1)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition shadow-sm"
+                      title={`Open Valuation Workbench for ${company.name}`}
+                    >
+                      <Calculator className="h-3.5 w-3.5 text-[var(--accent)]" />
+                      <span>Valuation</span>
+                    </Link>
+                    <Link
+                      href={`/watchlists?company_id=${company.id}`}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-white/5 px-2.5 py-1 text-xs font-semibold text-[var(--text-1)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition shadow-sm"
+                      title={`Add ${company.name} to Watchlist`}
+                    >
+                      <Bookmark className="h-3.5 w-3.5 text-primary" />
+                      <span>+ Watchlist</span>
+                    </Link>
+                    <Link
+                      href={`/journal?company_id=${company.id}`}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-white/5 px-2.5 py-1 text-xs font-semibold text-[var(--text-1)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition shadow-sm"
+                      title={`Log Thesis or Notes for ${company.name}`}
+                    >
+                      <BookOpen className="h-3.5 w-3.5 text-blue-400" />
+                      <span>+ Journal</span>
+                    </Link>
+                    <Link
+                      href={`/compare?companies=${company.id}`}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--accent)]/30 bg-[var(--accent)]/10 px-3 py-1 text-xs font-bold text-[var(--accent)] hover:bg-[var(--accent)]/20 transition shadow-sm"
+                      title={`Open Competitor Analysis for ${company.name}`}
+                    >
+                      <Users className="h-3.5 w-3.5" />
+                      <span>Compare</span>
+                    </Link>
+                  </div>
                   {company.is_financial_sector && (
                     <span className="inline-flex items-center gap-1 rounded-lg border border-[var(--warn)]/20 bg-[var(--warn)]/10 px-2.5 py-1 text-xs font-bold text-[var(--warn)]">
                       <ShieldAlert className="h-3 w-3 text-[var(--warn)]" />

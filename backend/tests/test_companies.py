@@ -156,7 +156,7 @@ def test_auto_sector_resolution_on_import(db_session: Session):
     assert is_fin_bank is True
 
     # 3. Test sector auto-resolution for Pharma
-    sec_pharma, ind_pharma, is_fin_pharma = service._resolve_sector_and_industry(
+    sec_pharma, _ind_pharma, is_fin_pharma = service._resolve_sector_and_industry(
         "SUNPHARMA", "NSE", "Sun Pharmaceutical Industries Limited"
     )
     assert sec_pharma == "Healthcare & Pharmaceuticals"

@@ -11,6 +11,8 @@ from app.models.ingestion import (
 )
 from app.models.market_data import CorporateAction, PriceHistory, ShareholdingHistory
 from app.models.screening import SavedScreen
+from app.models.valuation import SavedValuation
+from app.models.workflow import InvestmentNote, Watchlist, WatchlistItem
 
 __all__ = [
     "Company",
@@ -22,12 +24,16 @@ __all__ = [
     "FinancialStatement",
     "Industry",
     "IngestionJob",
+    "InvestmentNote",
     "PriceHistory",
     "RejectedRecord",
     "SavedScreen",
+    "SavedValuation",
     "Sector",
     "Security",
     "ShareholdingHistory",
     "SourceDocument",
     "ValidationResult",
+    "Watchlist",
+    "WatchlistItem",
 ]

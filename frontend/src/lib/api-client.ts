@@ -20,7 +20,23 @@ import type {
   CompanyComparisonResponse,
   CompanyPeersResponse,
 } from "@/types/comparison";
+import type {
+  DCFResult,
+  DCFScenarioAssumptions,
+  DDMResponse,
+  GrahamResponse,
+  HistoricalMultiplesResponse,
+  ReverseDCFResponse,
+  SavedValuation,
+  SensitivityMatrixResponse,
+  ValuationSummaryResponse,
+} from "@/types/valuation";
 import type { HealthResponse } from "@/types/health";
+import type {
+  Watchlist,
+  WatchlistItem,
+  InvestmentNote,
+} from "@/types/workflow";
 import type {
   CompanyRead,
   CompanySearchResponse,
@@ -97,6 +113,10 @@ export async function searchCompanies(params: {
 
   const queryStr = searchParams.toString();
   return apiFetch<CompanySearchResponse>(`/companies${queryStr ? `?${queryStr}` : ""}`);
+}
+
+export async function fetchCompanySearch(query: string): Promise<CompanySearchResponse> {
+  return searchCompanies({ q: query, page_size: 10 });
 }
 
 export async function fetchSectors(): Promise<SectorRead[]> {
@@ -447,6 +467,262 @@ export async function exportComparisonCsv(
   }
   return response.blob();
 }
+
+// ---------------------------------------------------------
+// Quantitative Valuation Workbench APIs (Phase 12)
+// ---------------------------------------------------------
+
+export async function runDCFValuation(
+  companyId: number,
+  assumptions: DCFScenarioAssumptions,
+  currentPrice?: number
+): Promise<DCFResult> {
+  return apiFetch<DCFResult>("/valuation/dcf", {
+    method: "POST",
+    body: JSON.stringify({
+      company_id: companyId,
+      assumptions,
+      current_price: currentPrice,
+    }),
+  });
+}
+
+export async function runReverseDCFValuation(payload: {
+  company_id: number;
+  current_price?: number;
+  wacc?: number;
+  terminal_growth_rate?: number;
+  operating_margin?: number;
+  reinvestment_rate?: number;
+  projection_years?: number;
+}): Promise<ReverseDCFResponse> {
+  return apiFetch<ReverseDCFResponse>("/valuation/reverse-dcf", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function runSensitivityMatrix(payload: {
+  company_id: number;
+  base_growth_rate?: number;
+  base_operating_margin?: number;
+  base_wacc?: number;
+  base_terminal_growth?: number;
+  projection_years?: number;
+  current_price?: number;
+}): Promise<SensitivityMatrixResponse> {
+  return apiFetch<SensitivityMatrixResponse>("/valuation/sensitivity", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function fetchHistoricalMultiplesValuation(
+  companyId: number,
+  currentPrice?: number
+): Promise<HistoricalMultiplesResponse> {
+  const url = currentPrice
+    ? `/valuation/${companyId}/historical-multiples?current_price=${currentPrice}`
+    : `/valuation/${companyId}/historical-multiples`;
+  return apiFetch<HistoricalMultiplesResponse>(url);
+}
+
+export async function runDDMValuation(payload: {
+  company_id: number;
+  cost_of_equity?: number;
+  dividend_growth_rate?: number;
+  high_growth_period_years?: number;
+  high_growth_rate?: number;
+  current_price?: number;
+}): Promise<DDMResponse> {
+  return apiFetch<DDMResponse>("/valuation/ddm", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function runGrahamValuation(payload: {
+  company_id: number;
+  expected_growth_rate?: number;
+  benchmark_yield_pct?: number;
+  current_price?: number;
+}): Promise<GrahamResponse> {
+  return apiFetch<GrahamResponse>("/valuation/graham", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function fetchValuationSummary(
+  companyId: number
+): Promise<ValuationSummaryResponse> {
+  return apiFetch<ValuationSummaryResponse>(`/valuation/${companyId}/summary`);
+}
+
+export async function saveValuationScenario(payload: {
+  company_id: number;
+  model_type: string;
+  scenario_name: string;
+  intrinsic_value?: number | null;
+  current_price_at_run?: number | null;
+  margin_of_safety_pct?: number | null;
+  assumptions: Record<string, any>;
+  projections?: any[];
+  notes?: string | null;
+}): Promise<SavedValuation> {
+  return apiFetch<SavedValuation>("/valuation/saved", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function fetchSavedValuations(
+  companyId?: number
+): Promise<SavedValuation[]> {
+  const url = companyId ? `/valuation/saved?company_id=${companyId}` : "/valuation/saved";
+  return apiFetch<SavedValuation[]>(url);
+}
+
+export async function deleteSavedValuation(valuationId: number): Promise<void> {
+  return apiFetch<void>(`/valuation/saved/${valuationId}`, {
+    method: "DELETE",
+  });
+}
+
+// ---------------------------------------------------------
+// Watchlists & Investment Journal APIs (Phase 13)
+// ---------------------------------------------------------
+
+export async function fetchWatchlists(): Promise<Watchlist[]> {
+  return apiFetch<Watchlist[]>("/watchlists");
+}
+
+export async function createWatchlist(payload: {
+  name: string;
+  description?: string;
+  color?: string;
+}): Promise<Watchlist> {
+  return apiFetch<Watchlist>("/watchlists", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function getWatchlist(watchlistId: number): Promise<Watchlist> {
+  return apiFetch<Watchlist>(`/watchlists/${watchlistId}`);
+}
+
+export async function updateWatchlist(
+  watchlistId: number,
+  payload: { name?: string; description?: string; color?: string }
+): Promise<Watchlist> {
+  return apiFetch<Watchlist>(`/watchlists/${watchlistId}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteWatchlist(watchlistId: number): Promise<void> {
+  return apiFetch<void>(`/watchlists/${watchlistId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function addWatchlistItem(
+  watchlistId: number,
+  payload: {
+    company_id: number;
+    target_entry_price?: number;
+    target_exit_price?: number;
+    conviction?: number;
+    thesis_summary?: string;
+    notes?: string;
+  }
+): Promise<WatchlistItem> {
+  return apiFetch<WatchlistItem>(`/watchlists/${watchlistId}/items`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateWatchlistItem(
+  watchlistId: number,
+  itemId: number,
+  payload: {
+    target_entry_price?: number;
+    target_exit_price?: number;
+    conviction?: number;
+    thesis_summary?: string;
+    notes?: string;
+  }
+): Promise<WatchlistItem> {
+  return apiFetch<WatchlistItem>(`/watchlists/${watchlistId}/items/${itemId}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function removeWatchlistItem(
+  watchlistId: number,
+  itemId: number
+): Promise<void> {
+  return apiFetch<void>(`/watchlists/${watchlistId}/items/${itemId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function fetchJournalNotes(params?: {
+  company_id?: number;
+  category?: string;
+  min_conviction?: number;
+}): Promise<InvestmentNote[]> {
+  const searchParams = new URLSearchParams();
+  if (params?.company_id) searchParams.set("company_id", params.company_id.toString());
+  if (params?.category) searchParams.set("category", params.category);
+  if (params?.min_conviction) searchParams.set("min_conviction", params.min_conviction.toString());
+
+  const q = searchParams.toString();
+  return apiFetch<InvestmentNote[]>(`/journal${q ? `?${q}` : ""}`);
+}
+
+export async function createJournalNote(payload: {
+  company_id: number;
+  title: string;
+  category?: string;
+  conviction_score?: number;
+  content: string;
+  catalysts?: any[];
+  key_risks?: any[];
+  target_price?: number;
+  review_date?: string;
+}): Promise<InvestmentNote> {
+  return apiFetch<InvestmentNote>("/journal", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function getJournalNote(noteId: number): Promise<InvestmentNote> {
+  return apiFetch<InvestmentNote>(`/journal/${noteId}`);
+}
+
+export async function updateJournalNote(
+  noteId: number,
+  payload: Partial<InvestmentNote>
+): Promise<InvestmentNote> {
+  return apiFetch<InvestmentNote>(`/journal/${noteId}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteJournalNote(noteId: number): Promise<void> {
+  return apiFetch<void>(`/journal/${noteId}`, {
+    method: "DELETE",
+  });
+}
+
+
 
 
 

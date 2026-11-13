@@ -48,18 +48,32 @@ from app.calculations.technical import (
     calculate_sma,
     evaluate_trend_signal,
 )
+from app.calculations.valuation import (
+    calculate_dcf,
+    calculate_dcf_sensitivity_matrix,
+    calculate_dividend_discount_model,
+    calculate_graham_formula,
+    calculate_historical_multiples_valuation,
+    calculate_reverse_dcf,
+)
 
 __all__ = [
     "asset_turnover",
     "calculate_altman_z_score",
     "calculate_bollinger_bands",
     "calculate_cagr",
+    "calculate_dcf",
+    "calculate_dcf_sensitivity_matrix",
+    "calculate_dividend_discount_model",
     "calculate_ema",
+    "calculate_graham_formula",
+    "calculate_historical_multiples_valuation",
     "calculate_historical_returns",
     "calculate_macd",
     "calculate_max_drawdown",
     "calculate_piotroski_f_score",
     "calculate_pivot_points",
+    "calculate_reverse_dcf",
     "calculate_rsi",
     "calculate_sma",
     "calculate_yoy_growth",

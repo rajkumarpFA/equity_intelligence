@@ -1,12 +1,23 @@
-import { PhasePlaceholder } from "@/components/common/PhasePlaceholder";
+import React, { Suspense } from "react";
+import { JournalView } from "@/components/journal/JournalView";
+
+export const metadata = {
+  title: "Investment Journal | Equity Intelligence",
+  description: "Document investment rationale, thesis milestones, catalysts, and review notes.",
+};
 
 export default function JournalPage() {
   return (
-    <PhasePlaceholder
-      title="Investment Journal"
-      subtitle="Decision log, rationale, and risk notes"
-      phaseLabel="Phase 13 Module"
-      description="Maintain structured investment notes, bull/bear theses, identified risks, entry rationale, and historical research decisions."
-    />
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-canvas flex items-center justify-center p-8">
+          <div className="font-mono text-sm text-mute animate-pulse">
+            Loading Investment Journal...
+          </div>
+        </div>
+      }
+    >
+      <JournalView />
+    </Suspense>
   );
 }

@@ -453,5 +453,83 @@ This document tracks all tasks, architectural decisions, completed deliverables,
 ---
 
 ## Phase 12: Valuation Workbench
+- **Status**: Completed & Verified
+- **Scope**: Multi-model quantitative valuation workbench including Discounted Cash Flow (DCF with terminal growth & EV/EBITDA exit multiple), Reverse DCF solver (market-implied revenue growth rate), 5x5 WACC vs Terminal Growth Sensitivity Matrix heatmap, Historical Multiple Comparison (P/E, P/B, EV/EBITDA 10th/25th/50th/75th/90th percentile valuation bands), Dividend Discount Model (DDM / Gordon Growth with dividend payer guard), Benjamin Graham Formula intrinsic value with 10Y AAA corporate/sovereign bond yield adjustment, commercial banking sector model guards (bypassing FCFF/EBITDA for banks/NBFCs with actionable guidance to DDM and P/B), saved scenario persistence, and Voltagent-inspired interactive `/valuation` workbench.
+- **Tasks Done**:
+  - **Database Schema & Migrations (`backend/app/models/valuation.py`, Alembic `0005_valuation_and_workflows.py`)**:
+    - Created `SavedValuation` model storing scenario name, model type (`DCF`, `REVERSE_DCF`, `DDM`, `GRAHAM`), assumptions JSON, result JSON, intrinsic value per share, margin of safety %, and upside %.
+    - Applied Alembic migration cleanly to PostgreSQL.
+  - **Mathematical Valuation Engine (`backend/app/calculations/valuation.py`)**:
+    - `calculate_dcf()`: 5-year explicit FCFF projection with revenue, operating margins, tax rate, reinvestment, discount factors, Gordon Growth and EV/EBITDA terminal values, net debt equity bridge, and per-share fair value.
+    - `calculate_reverse_dcf()`: Binary search iterative solver finding the exact revenue growth rate implied by the current market price, compared against 3Y historical CAGR.
+    - `calculate_dcf_sensitivity_matrix()`: 5x5 grid evaluating intrinsic value across varying WACC ($\pm 2\%$) and terminal growth rates ($\pm 1\%$).
+    - `calculate_historical_multiples_valuation()`: Percentile distributions across P/E, P/B, and EV/EBITDA over historical fundamental statements, estimating implied share prices across 25th, median, and 75th percentiles.
+    - `calculate_dividend_discount_model()`: Gordon Growth model ($V_0 = \frac{D_1}{r - g}$) with safeguards ensuring cost of equity exceeds dividend growth rate and strict dividend-payer detection.
+    - `calculate_graham_formula()`: Benjamin Graham's revised intrinsic value formula $V = \frac{\text{EPS} \times (8.5 + 2g) \times 4.4}{Y}$ with prevailing sovereign bond yield adjustments.
+  - **Valuation Service & Banking Sector Isolation (`backend/app/services/valuation_service.py`)**:
+    - Automatic financial statement fact extraction (Revenue, EBIT, Net Income, Net Debt, Shares Outstanding) from PostgreSQL.
+    - **Banking Sector Guard**: Flags financial institutions (`is_financial_sector = True`), bypassing FCFF DCF with status `BYPASSED` and guidance to utilize DDM and Price-to-Book multiple bands.
+    - Saved scenario CRUD operations with upside & margin of safety tracking.
+  - **API Endpoints (`backend/app/api/v1/endpoints/valuation.py`)**:
+    - `POST /api/v1/valuation/dcf`: Custom DCF scenario calculation.
+    - `POST /api/v1/valuation/reverse-dcf`: Market-implied growth solver.
+    - `POST /api/v1/valuation/sensitivity`: 5x5 sensitivity matrix generator.
+    - `GET /api/v1/valuation/{company_id}/historical-multiples`: Historical multiple percentile bands.
+    - `POST /api/v1/valuation/ddm`: Dividend discount model calculation.
+    - `POST /api/v1/valuation/graham`: Benjamin Graham valuation.
+    - `GET /api/v1/valuation/{company_id}/summary`: Multi-model summary consensus fair value.
+    - `GET /api/v1/valuation/saved`: List saved scenarios.
+    - `POST /api/v1/valuation/saved`: Persist scenario snapshot.
+    - `DELETE /api/v1/valuation/saved/{id}`: Delete saved scenario.
+  - **Frontend UI & Components (`frontend/src/`)**:
+    - `types/valuation.ts`: Complete TypeScript interfaces matching backend models.
+    - `lib/api-client.ts`: Registered all valuation API client endpoints.
+    - `components/valuation/ValuationWorkbench.tsx`: Full Voltagent dark-canvas UI with benchmark pills, consensus fair value card, interactive DCF scenario sliders with 5-year FCFF projection table and EV bridge, Reverse DCF implied growth solver, 5x5 sensitivity heatmap, historical multiples percentile bands, DDM calculator, Graham formula, and saved scenario drawer.
+    - `app/valuation/page.tsx`: Integrated ValuationWorkbench wrapped in `<Suspense>`.
+- **Test Gate**:
+  - Backend: 16/16 Pytest tests passed (`test_valuation.py` covering DCF, Reverse DCF, sensitivity, DDM, Graham, banking bypass, and saved scenarios; 113/113 total backend tests passing).
+  - Code Quality: `uv run ruff check app tests` passed with 0 errors.
+  - Frontend: 5/5 Vitest tests passed (`valuation.test.tsx`).
+
+---
+
+## Phase 13: Watchlists & Investment Journal
+- **Status**: Completed & Verified
+- **Scope**: Multi-list stock tracking engine with custom color badges, live quote enrichment, target entry/exit prices, real-time distance-to-entry percentage ("In Buy Zone" detection badges), conviction ratings (1-5 stars), Investment Thesis Journal with structured categories (`THESIS`, `EARNINGS`, `RISK`, `VALUATION`, `POST_MORTEM`), conviction scores, target prices, review dates, structured catalysts with target dates, key risk tracking with mitigants, rendered markdown notes stream, and seamless cross-platform navigation from company pages.
+- **Tasks Done**:
+  - **Database Schema & Migrations (`backend/app/models/workflow.py`, Alembic `0005_valuation_and_workflows.py`)**:
+    - Created `Watchlist` and `WatchlistItem` tables with foreign keys and unique constraint `uq_watchlist_company`.
+    - Created `InvestmentNote` table with structured JSON columns for catalysts and key risks.
+  - **Services & Workflows (`backend/app/services/watchlist_service.py`, `backend/app/services/journal_service.py`)**:
+    - Live price enrichment and dynamic `distance_to_entry_pct` calculation for watchlists (`(current_price - target_entry) / target_entry * 100`).
+    - Duplicate company insertion guard.
+    - Note lifecycle management with category, conviction, and company filters.
+  - **API Endpoints (`backend/app/api/v1/endpoints/watchlists.py`, `backend/app/api/v1/endpoints/journal.py`)**:
+    - `GET /api/v1/watchlists`: List all user watchlists.
+    - `POST /api/v1/watchlists`: Create watchlist with custom color badge.
+    - `DELETE /api/v1/watchlists/{id}`: Delete watchlist.
+    - `POST /api/v1/watchlists/{id}/items`: Add stock to watchlist.
+    - `PUT /api/v1/watchlists/items/{id}`: Update target prices, conviction, and notes.
+    - `DELETE /api/v1/watchlists/items/{id}`: Remove stock from watchlist.
+    - `GET /api/v1/journal`: List investment notes with category/company filters.
+    - `POST /api/v1/journal`: Create investment thesis note with catalysts and risks.
+    - `PUT /api/v1/journal/{id}`: Update note.
+    - `DELETE /api/v1/journal/{id}`: Delete note.
+  - **Frontend UI & Components (`frontend/src/`)**:
+    - `types/workflow.ts`: TypeScript interfaces for Watchlists and Investment Notes.
+    - `lib/api-client.ts`: Client endpoints for watchlists and journal.
+    - `components/watchlist/WatchlistView.tsx`: Voltagent dark-theme UI with multiple colored lists, stock search modal, live pricing, distance-to-entry % ("🎯 IN BUY ZONE" badge), conviction stars, target exit pricing, and inline target editing.
+    - `components/journal/JournalView.tsx`: Voltagent dark-theme UI with thesis creation modal, category tabs (`THESIS`, `EARNINGS`, `RISK`, `VALUATION`, `POST_MORTEM`), conviction ratings, scheduled review date tracking, structured catalysts & risk mitigants builder, and rendered markdown notes stream.
+    - `app/watchlists/page.tsx` & `app/journal/page.tsx`: Pages wrapped in `<Suspense>`.
+    - `app/companies/[id]/page.tsx`: Added quick action buttons in header (`Valuation`, `+ Watchlist`, `+ Journal`, `Compare`) with query parameter prefill integration.
+- **Test Gate**:
+  - Backend: 3 integration test suites passed (`test_workflows.py` covering watchlist CRUD, duplicate guard, buy zone distance logic, and journal CRUD; 113/113 total backend tests passing).
+  - Code Quality: `uv run ruff check app tests` passed with 0 errors.
+  - Frontend: 6/6 Vitest tests passed (`watchlist.test.tsx`, `journal.test.tsx`; 48/48 total frontend tests passing across 14 test files).
+  - Production Build: Next.js production build succeeded with all 13 routes cleanly compiled (0 errors).
+
+---
+
+## Phase 14: Portfolio Analytics & Tracking
 - **Status**: Ready to Begin
-- **Scope**: Multi-model valuation workbench including Discounted Cash Flow (DCF with terminal growth & exit multiple), Historical Multiple Comparison (P/E, P/B, EV/EBITDA percentile bands), Dividend Discount Model (DDM / Gordon Growth for dividend payers), Graham Formula intrinsic value, reverse DCF sensitivity matrix (implied growth rate from current price), custom scenario builder, and interactive `/valuation` page.
+- **Scope**: Multi-portfolio management, transaction ledger (BUY, SELL, DIVIDEND), trade lot matching (FIFO, Weighted Average), real-time portfolio XIRR, Sector & Market Cap asset allocation breakdown, Cash ledger & dividend yield tracking, Benchmark Alpha & Beta against NIFTY 50, and interactive `/portfolio` frontend view.
