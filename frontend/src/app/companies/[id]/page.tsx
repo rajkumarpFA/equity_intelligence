@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -49,11 +49,41 @@ import { FreshnessChip } from "@/components/common/FreshnessChip";
 
 export default function CompanyDetailPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const companyId = Number(params?.id);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const initialTab = searchParams.get("tab") as
+    | "technicals"
+    | "statements"
+    | "analysis"
+    | "shareholding"
+    | "corporate_actions"
+    | "documents"
+    | "suite"
+    | null;
+
   const [activeTab, setActiveTab] = useState<
     "technicals" | "statements" | "analysis" | "shareholding" | "corporate_actions" | "documents" | "suite"
-  >("statements");
+  >(initialTab || "statements");
+
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (
+      tabParam &&
+      [
+        "technicals",
+        "statements",
+        "analysis",
+        "shareholding",
+        "corporate_actions",
+        "documents",
+        "suite",
+      ].includes(tabParam)
+    ) {
+      setActiveTab(tabParam as typeof activeTab);
+    }
+  }, [searchParams]);
 
   const {
     data: company,
