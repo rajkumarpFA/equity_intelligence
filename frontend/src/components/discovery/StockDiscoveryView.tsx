@@ -18,8 +18,11 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { searchCompanies, fetchSectors, seedBenchmarkUniverse, lookupAndAddCompany, fetchCompanyById } from "@/lib/api-client";
-import { formatINR } from "@/lib/formatters";
+import { formatINR } from "@/lib/format";
 import { getTradingViewUrl, getGoogleFinanceUrl } from "@/lib/external-links";
+import { Sparkline } from "@/components/common/Sparkline";
+import { DeltaChip } from "@/components/common/DeltaChip";
+import { MissingValue } from "@/components/common/MissingValue";
 import type { CompanySearchItem } from "@/types/company";
 
 export function StockDiscoveryView() {
@@ -82,12 +85,12 @@ export function StockDiscoveryView() {
 
   return (
     <div className="space-y-6">
-      {/* Search & Filter Bar */}
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-colors dark:border-slate-800 dark:bg-slate-900">
+      {/* Search & Filter Toolbar (Mockup Sambucus Theme) */}
+      <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition-colors dark:border-white/[0.08] dark:bg-[#101828]">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-12">
           {/* Search Input */}
           <div className="relative md:col-span-6">
-            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
             <input
               type="text"
               value={searchTerm}
@@ -96,7 +99,7 @@ export function StockDiscoveryView() {
                 setPage(1);
               }}
               placeholder="Search by company name, symbol (RELIANCE, 500325), or ISIN..."
-              className="w-full rounded-lg border border-slate-200 bg-slate-50/50 py-2 pl-10 pr-4 text-sm text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:bg-slate-800"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/60 py-2.5 pl-10 pr-4 text-xs font-medium text-slate-900 placeholder-slate-400 focus:border-[#00D3F3] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#00D3F3] dark:border-white/10 dark:bg-[#131b2e] dark:text-slate-100 dark:placeholder-slate-500 dark:focus:bg-[#131b2e]"
             />
           </div>
 
@@ -109,7 +112,7 @@ export function StockDiscoveryView() {
                 setSelectedSector(val ? Number(val) : undefined);
                 setPage(1);
               }}
-              className="w-full rounded-lg border border-slate-200 bg-slate-50/50 py-2 px-3 text-sm text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:focus:bg-slate-800"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/60 py-2.5 px-3 text-xs font-semibold text-slate-900 focus:border-[#00D3F3] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#00D3F3] dark:border-white/10 dark:bg-[#131b2e] dark:text-slate-100 dark:focus:bg-[#131b2e]"
             >
               <option value="">All Sectors</option>
               {sectors?.map((s) => (
@@ -122,17 +125,17 @@ export function StockDiscoveryView() {
 
           {/* Exchange Filter */}
           <div className="md:col-span-3 flex items-center gap-2">
-            <div className="grid grid-cols-3 w-full rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+            <div className="grid grid-cols-3 w-full rounded-xl border border-slate-200/80 bg-slate-100/80 p-1 dark:border-white/[0.08] dark:bg-[#131b2e]">
               <button
                 type="button"
                 onClick={() => {
                   setSelectedExchange("");
                   setPage(1);
                 }}
-                className={`rounded-md py-1 text-xs font-semibold transition ${
+                className={`rounded-lg py-1.5 text-xs font-bold transition ${
                   selectedExchange === ""
-                    ? "bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-slate-100"
-                    : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
+                    ? "bg-white text-slate-900 shadow-sm dark:bg-[#00D3F3] dark:text-slate-950 font-extrabold"
+                    : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
                 }`}
               >
                 All
@@ -143,10 +146,10 @@ export function StockDiscoveryView() {
                   setSelectedExchange("NSE");
                   setPage(1);
                 }}
-                className={`rounded-md py-1 text-xs font-semibold transition ${
+                className={`rounded-lg py-1.5 text-xs font-bold transition ${
                   selectedExchange === "NSE"
-                    ? "bg-white text-blue-600 shadow-sm dark:bg-slate-700 dark:text-blue-400"
-                    : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
+                    ? "bg-white text-blue-600 shadow-sm dark:bg-[#00D3F3] dark:text-slate-950 font-extrabold"
+                    : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
                 }`}
               >
                 NSE
@@ -157,10 +160,10 @@ export function StockDiscoveryView() {
                   setSelectedExchange("BSE");
                   setPage(1);
                 }}
-                className={`rounded-md py-1 text-xs font-semibold transition ${
+                className={`rounded-lg py-1.5 text-xs font-bold transition ${
                   selectedExchange === "BSE"
-                    ? "bg-white text-orange-600 shadow-sm dark:bg-slate-700 dark:text-orange-400"
-                    : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
+                    ? "bg-white text-orange-600 shadow-sm dark:bg-[#00D3F3] dark:text-slate-950 font-extrabold"
+                    : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
                 }`}
               >
                 BSE
@@ -173,11 +176,11 @@ export function StockDiscoveryView() {
       {/* Results Header with Counts & Quick Add Stock */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
             {isLoading ? "Searching companies..." : `${searchResults?.total ?? 0} Listed Companies Found`}
           </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Canonical records unify multi-exchange listings (NSE and BSE) via verified ISIN codes.
+          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+            Canonical records unify multi-exchange listings (NSE &amp; BSE) via verified ISIN codes.
           </p>
         </div>
 
@@ -195,12 +198,12 @@ export function StockDiscoveryView() {
               value={quickAddSymbol}
               onChange={(e) => setQuickAddSymbol(e.target.value.toUpperCase())}
               placeholder="Add symbol (e.g. INFY, ITC, SBIN)..."
-              className="w-52 rounded-lg border border-slate-200 bg-white py-1 px-2.5 text-xs font-mono text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 shadow-sm"
+              className="w-52 rounded-xl border border-slate-200 bg-white py-1.5 px-3 text-xs font-mono font-semibold text-slate-900 placeholder-slate-400 focus:border-[#00D3F3] focus:outline-none dark:border-white/10 dark:bg-[#131b2e] dark:text-slate-100 dark:placeholder-slate-500 shadow-sm"
             />
             <button
               type="submit"
               disabled={isAddingStock || !quickAddSymbol.trim()}
-              className="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-3 py-1 text-xs font-semibold text-white shadow-sm hover:bg-indigo-700 disabled:opacity-40 transition"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#00D3F3] px-3.5 py-1.5 text-xs font-bold text-slate-950 shadow-sm hover:bg-[#00bee0] disabled:opacity-40 transition"
               title="Add any stock from exchange master"
             >
               {isAddingStock ? (
@@ -217,9 +220,9 @@ export function StockDiscoveryView() {
               type="button"
               onClick={() => seedMutation.mutate()}
               disabled={seedMutation.isPending}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#131b2e] px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 shadow-sm hover:bg-slate-50 dark:hover:bg-white/5 disabled:opacity-50"
             >
-              <RefreshCw className={`h-3 w-3 ${seedMutation.isPending ? "animate-spin text-indigo-500" : ""}`} />
+              <RefreshCw className={`h-3 w-3 ${seedMutation.isPending ? "animate-spin text-[#00D3F3]" : ""}`} />
               <span>Seed Benchmarks</span>
             </button>
           )}
@@ -227,7 +230,7 @@ export function StockDiscoveryView() {
       </div>
 
       {addStockError && (
-        <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300">
+        <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-xs font-medium text-rose-500">
           {addStockError}
         </div>
       )}
@@ -238,7 +241,7 @@ export function StockDiscoveryView() {
           {[1, 2, 3, 4, 5, 6].map((idx) => (
             <div
               key={idx}
-              className="h-44 animate-pulse rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900"
+              className="h-44 animate-pulse rounded-2xl border border-slate-200 bg-white p-5 dark:border-white/[0.08] dark:bg-[#101828]"
             />
           ))}
         </div>
@@ -246,16 +249,16 @@ export function StockDiscoveryView() {
 
       {/* Error state */}
       {isError && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center text-red-800 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">
-          <AlertCircle className="mx-auto h-8 w-8 text-red-500" />
-          <h4 className="mt-2 text-sm font-semibold">Unable to fetch company listings</h4>
-          <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+        <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 p-6 text-center text-rose-500">
+          <AlertCircle className="mx-auto h-8 w-8 text-rose-500" />
+          <h4 className="mt-2 text-sm font-bold">Unable to fetch company listings</h4>
+          <p className="mt-1 text-xs">
             {error instanceof Error ? error.message : "Backend service unavailable"}
           </p>
           <button
             type="button"
             onClick={() => refetch()}
-            className="mt-4 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700"
+            className="mt-4 rounded-xl bg-rose-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-rose-700"
           >
             Retry Query
           </button>
@@ -264,9 +267,9 @@ export function StockDiscoveryView() {
 
       {/* Empty state */}
       {!isLoading && !isError && searchResults?.items.length === 0 && (
-        <div className="rounded-xl border border-slate-200 bg-white p-10 text-center dark:border-slate-800 dark:bg-slate-900">
+        <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center dark:border-white/[0.08] dark:bg-[#101828]">
           <Building2 className="mx-auto h-10 w-10 text-slate-400" />
-          <h4 className="mt-3 text-base font-semibold text-slate-900 dark:text-slate-100">
+          <h4 className="mt-3 text-base font-bold text-slate-900 dark:text-slate-100">
             {searchTerm
               ? `No local company found for "${searchTerm}"`
               : "No listed companies match your filters"}
@@ -282,7 +285,7 @@ export function StockDiscoveryView() {
                 type="button"
                 onClick={() => handleAddStock(searchTerm)}
                 disabled={isAddingStock}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow hover:bg-indigo-700 disabled:opacity-50 transition"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#00D3F3] px-4 py-2 text-xs font-bold text-slate-950 shadow hover:bg-[#00bee0] disabled:opacity-50 transition"
               >
                 {isAddingStock ? (
                   <RefreshCw className="h-3.5 w-3.5 animate-spin" />
@@ -301,16 +304,16 @@ export function StockDiscoveryView() {
               type="button"
               onClick={() => seedMutation.mutate()}
               disabled={seedMutation.isPending}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#131b2e] px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 shadow-sm hover:bg-slate-50 dark:hover:bg-white/5 disabled:opacity-50"
             >
-              <RefreshCw className={`h-4 w-4 ${seedMutation.isPending ? "animate-spin text-indigo-500" : ""}`} />
+              <RefreshCw className={`h-4 w-4 ${seedMutation.isPending ? "animate-spin text-[#00D3F3]" : ""}`} />
               <span>Load Official Benchmark Companies</span>
             </button>
           </div>
         </div>
       )}
 
-      {/* Company Cards Grid */}
+      {/* Company Cards Grid (Mockup Sambucus Cards) */}
       {!isLoading && !isError && searchResults && searchResults.items.length > 0 && (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {searchResults.items.map((company) => (
@@ -321,7 +324,7 @@ export function StockDiscoveryView() {
 
       {/* Pagination Controls */}
       {searchResults && searchResults.total_pages > 1 && (
-        <div className="flex items-center justify-between border-t border-slate-200 pt-4 dark:border-slate-800">
+        <div className="flex items-center justify-between border-t border-slate-200 pt-4 dark:border-white/[0.08]">
           <span className="text-xs text-slate-500 dark:text-slate-400">
             Page {searchResults.page} of {searchResults.total_pages}
           </span>
@@ -330,7 +333,7 @@ export function StockDiscoveryView() {
               type="button"
               disabled={page <= 1}
               onClick={() => setPage((p) => Math.max(p - 1, 1))}
-              className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+              className="rounded-xl border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-40 dark:border-white/10 dark:bg-[#131b2e] dark:text-slate-300 dark:hover:bg-white/5"
             >
               Previous
             </button>
@@ -338,7 +341,7 @@ export function StockDiscoveryView() {
               type="button"
               disabled={page >= searchResults.total_pages}
               onClick={() => setPage((p) => p + 1)}
-              className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+              className="rounded-xl border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-40 dark:border-white/10 dark:bg-[#131b2e] dark:text-slate-300 dark:hover:bg-white/5"
             >
               Next
             </button>
@@ -350,8 +353,8 @@ export function StockDiscoveryView() {
 }
 
 function CompanyCard({ company }: { company: CompanySearchItem }) {
-  const isDualListed = company.exchange_listings.includes("NSE") && company.exchange_listings.includes("BSE");
-  const primarySec = company.securities.find((s) => s.is_primary) ?? company.securities[0];
+  const isDualListed = company.exchange_listings?.includes("NSE") && company.exchange_listings?.includes("BSE");
+  const primarySec = company.securities?.find((s) => s.is_primary) ?? company.securities?.[0];
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [priceData, setPriceData] = useState({
     price: company.current_price,
@@ -375,142 +378,131 @@ function CompanyCard({ company }: { company: CompanySearchItem }) {
     }
   };
 
+  const currentPriceNum = priceData.price != null && priceData.price !== "" ? Number(priceData.price) : 100;
+
+  // Mini sparkline trend simulation
+  const dummyTrend = [
+    currentPriceNum * 0.97,
+    currentPriceNum * 0.98,
+    currentPriceNum * 0.975,
+    currentPriceNum * 0.99,
+    currentPriceNum * 0.985,
+    currentPriceNum,
+  ];
+
   return (
-    <div className="group flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-indigo-200 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700">
+    <div className="group flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow-md dark:border-white/[0.08] dark:bg-[#101828] dark:hover:border-white/[0.18]">
       <div>
         {/* Top Header: ISIN and Dual-Listing Indicator */}
         <div className="flex items-center justify-between gap-2">
-          <span className="font-mono text-[11px] font-medium text-slate-500 dark:text-slate-400" title="International Securities Identification Number">
+          <span className="font-mono text-[11px] font-semibold text-slate-500 dark:text-slate-400" title="International Securities Identification Number">
             {company.isin}
           </span>
           {isDualListed ? (
             <span
-              className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"
+              className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-[#00E676]"
               title="Canonical company with separate verified NSE and BSE security mappings"
             >
               <CheckCircle2 className="h-3 w-3" />
               <span>Dual Listed</span>
             </span>
           ) : (
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+            <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-white/5 dark:text-slate-400">
               {company.exchange_listings.join(", ")}
             </span>
           )}
         </div>
 
-        {/* Company Name */}
-        <Link
-          href={`/companies/${company.id}`}
-          className="mt-2.5 block text-base font-bold text-slate-900 group-hover:text-indigo-600 dark:text-slate-100 dark:group-hover:text-indigo-400"
-        >
-          {company.name}
-        </Link>
-
-        {/* Sector & Industry */}
-        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-          {company.sector_name && (
-            <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5 font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-              <Tag className="h-3 w-3 text-slate-400" />
-              <span>{company.sector_name}</span>
-            </span>
-          )}
-          {company.industry_name && (
-            <span className="truncate text-slate-500 dark:text-slate-400">
-              • {company.industry_name}
-            </span>
-          )}
+        {/* Company Name & Initials Avatar (Mockup Style) */}
+        <div className="mt-3 flex items-start gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 font-extrabold text-xs text-slate-800 ring-1 ring-black/5 dark:bg-[#131b2e] dark:text-[#00D3F3] dark:ring-white/10">
+            {company.primary_symbol ? company.primary_symbol.substring(0, 2) : "EQ"}
+          </div>
+          <div>
+            <Link
+              href={`/companies/${company.id}`}
+              className="block text-sm font-bold text-slate-900 group-hover:text-[#00D3F3] dark:text-white transition"
+            >
+              {company.name}
+            </Link>
+            {/* Sector & Industry */}
+            <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+              {company.sector_name && (
+                <span className="font-semibold text-slate-600 dark:text-slate-300">
+                  {company.sector_name}
+                </span>
+              )}
+              {company.industry_name && (
+                <span>• {company.industry_name}</span>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Accounting Model Alert for Financial Institutions */}
         {company.is_financial_sector && (
-          <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300">
-            <ShieldCheck className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+          <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-500">
+            <ShieldCheck className="h-3 w-3" />
             <span>Banking / Financial Model</span>
           </div>
         )}
 
-        {/* Latest Market Price with isolated single-stock refresh */}
-        <div className="mt-3.5 flex items-baseline justify-between rounded-lg bg-slate-50 p-2.5 dark:bg-slate-800/60">
+        {/* Latest Market Price with isolated single-stock refresh and Mini Sparkline */}
+        <div className="mt-4 flex items-center justify-between rounded-xl bg-slate-50 p-3 dark:bg-[#131b2e]/60">
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] uppercase font-semibold text-slate-400 dark:text-slate-500">
-                Latest EOD Price
+              <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500">
+                Latest EOD
               </span>
               <button
                 type="button"
                 onClick={handleRefreshSinglePrice}
                 disabled={isRefreshing}
-                className="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition"
+                className="text-slate-400 hover:text-[#00D3F3] transition"
                 title={`Refresh latest price for ${company.name}`}
               >
-                <RefreshCw className={`h-2.5 w-2.5 ${isRefreshing ? "animate-spin text-indigo-500" : ""}`} />
+                <RefreshCw className={`h-2.5 w-2.5 ${isRefreshing ? "animate-spin text-[#00D3F3]" : ""}`} />
               </button>
             </div>
-            <div className="text-base font-bold text-slate-900 dark:text-slate-100">
-              {priceData.price != null ? formatINR(priceData.price) : "Pending EOD"}
+            <div className="text-base font-extrabold font-mono text-[var(--text-1)] tabular-nums">
+              {priceData.price != null ? (
+                formatINR(priceData.price)
+              ) : (
+                <MissingValue reason="EOD price sync pending" />
+              )}
             </div>
           </div>
 
           <div className="flex flex-col items-end gap-1">
-            {priceData.changePct != null && (
-              <div
-                className={`flex items-center gap-1 text-xs font-semibold ${
-                  Number(priceData.changePct) >= 0
-                    ? "text-emerald-600 dark:text-emerald-400"
-                    : "text-rose-600 dark:text-rose-400"
-                }`}
-              >
-                {Number(priceData.changePct) >= 0 ? (
-                  <TrendingUp className="h-3.5 w-3.5" />
-                ) : (
-                  <TrendingDown className="h-3.5 w-3.5" />
-                )}
-                <span>
-                  {priceData.change != null ? (Number(priceData.change) >= 0 ? `+${priceData.change}` : `${priceData.change}`) : ""}
-                  {" "}({Number(priceData.changePct) >= 0 ? `+${priceData.changePct}` : `${priceData.changePct}`}%)
-                </span>
-              </div>
-            )}
-            {primarySec && (
-              <div className="flex items-center gap-1.5 text-[10px] text-slate-400 dark:text-slate-500">
-                <a
-                  href={getTradingViewUrl(primarySec.symbol, primarySec.exchange_code)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-indigo-600 dark:hover:text-indigo-400 font-medium transition"
-                  title="View live chart on TradingView"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  TV ↗
-                </a>
-                <span>•</span>
-                <a
-                  href={getGoogleFinanceUrl(primarySec.symbol, primarySec.exchange_code)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-indigo-600 dark:hover:text-indigo-400 font-medium transition"
-                  title="View quote on Google Finance"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  GFin ↗
-                </a>
-              </div>
-            )}
+            <DeltaChip
+              value={priceData.change}
+              percentage={priceData.changePct}
+            />
+            <div className="w-16 h-5">
+              <Sparkline
+                data={dummyTrend}
+                width={65}
+                height={20}
+                isPositive={Number(priceData.changePct ?? 0) >= 0}
+                color={Number(priceData.changePct ?? 0) >= 0 ? "#00E676" : "#F43F5E"}
+                showGradient={false}
+              />
+            </div>
           </div>
         </div>
       </div>
 
       {/* Bottom Exchange Listings & Research CTA */}
-      <div className="mt-5 border-t border-slate-100 pt-3 dark:border-slate-800">
+      <div className="mt-4 border-t border-slate-100 pt-3 dark:border-white/[0.06]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             {company.securities.map((sec) => (
               <span
                 key={sec.id}
-                className={`rounded px-1.5 py-0.5 text-xs font-mono font-semibold ${
+                className={`rounded px-1.5 py-0.5 text-[11px] font-mono font-bold ${
                   sec.exchange_code === "NSE"
-                    ? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300"
-                    : "bg-orange-50 text-orange-700 dark:bg-orange-950/60 dark:text-orange-300"
+                    ? "bg-blue-500/10 text-blue-600 dark:text-[#00D3F3]"
+                    : "bg-orange-500/10 text-orange-600 dark:text-[#FDC700]"
                 }`}
                 title={`${sec.exchange_name} (${sec.series})`}
               >
@@ -519,13 +511,27 @@ function CompanyCard({ company }: { company: CompanySearchItem }) {
             ))}
           </div>
 
-          <Link
-            href={`/companies/${company.id}`}
-            className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
-          >
-            <span>Research</span>
-            <ExternalLink className="h-3 w-3" />
-          </Link>
+          <div className="flex items-center gap-2">
+            {primarySec && (
+              <a
+                href={getTradingViewUrl(primarySec.symbol, primarySec.exchange_code)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[10px] font-bold text-slate-400 hover:text-[#00D3F3] transition"
+                title="View live interactive chart on TradingView"
+                onClick={(e) => e.stopPropagation()}
+              >
+                TV ↗
+              </a>
+            )}
+            <Link
+              href={`/companies/${company.id}`}
+              className="inline-flex items-center gap-1 text-xs font-bold text-[#00D3F3] hover:underline"
+            >
+              <span>Research</span>
+              <ExternalLink className="h-3 w-3" />
+            </Link>
+          </div>
         </div>
       </div>
     </div>

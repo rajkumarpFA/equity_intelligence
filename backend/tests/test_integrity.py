@@ -3,8 +3,6 @@
 from datetime import date
 from decimal import Decimal
 
-from fastapi.testclient import TestClient
-
 from app.integrity.accounting_rules import (
     validate_balance_sheet_identity,
     validate_banking_accounting_identity,
@@ -25,7 +23,6 @@ from app.integrity.outlier_rules import (
     validate_yoy_anomalies,
 )
 from app.integrity.restatement_manager import compute_restatement_diff
-from app.main import app
 from app.models.company import Company, Exchange, Security
 from app.models.financials import FinancialFact, FinancialMetric, FinancialStatement
 from app.models.market_data import CorporateAction, PriceHistory
@@ -190,7 +187,7 @@ def test_corporate_action_adjuster_math():
     assert factors[date(2024, 1, 1)] == Decimal("1.0")
 
 
-def test_integrity_service_and_endpoint_integration(db_session):
+def test_integrity_service_and_endpoint_integration(db_session, client):
     """Test full database integration with IntegrityService and FastAPI endpoints."""
     # Create test company and exchange
     ex = Exchange(code="NSE", name="National Stock Exchange")
@@ -278,7 +275,6 @@ def test_integrity_service_and_endpoint_integration(db_session):
     assert candle.adj_close == Decimal("500.00")  # 1000 / 2 = 500
 
     # 3. Test API endpoint with TestClient
-    client = TestClient(app)
     resp = client.post(f"/api/v1/integrity/validate/company/{comp.id}")
     assert resp.status_code == 200
     data = resp.json()

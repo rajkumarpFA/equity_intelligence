@@ -41,9 +41,9 @@ export interface CompanyRead {
   description?: string | null;
   website?: string | null;
   status: string;
-  current_price?: number | null;
-  price_change?: number | null;
-  price_change_pct?: number | null;
+  current_price?: number | string | null;
+  price_change?: number | string | null;
+  price_change_pct?: number | string | null;
   price_date?: string | null;
   securities: SecurityRead[];
   created_at: string;
@@ -61,9 +61,9 @@ export interface CompanySearchItem {
   status: string;
   primary_symbol?: string | null;
   exchange_listings: string[];
-  current_price?: number | null;
-  price_change?: number | null;
-  price_change_pct?: number | null;
+  current_price?: number | string | null;
+  price_change?: number | string | null;
+  price_change_pct?: number | string | null;
   price_date?: string | null;
   securities: SecurityRead[];
 }

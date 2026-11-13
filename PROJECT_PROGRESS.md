@@ -201,5 +201,179 @@ This document tracks all tasks, architectural decisions, completed deliverables,
 ---
 
 ## Phase 7: Financial Statements & Company Research UI
-- **Status**: Ready to Begin (Awaiting User Approval of Phase 6)
-- **Scope**: Comprehensive 18-section Company Research page at `/companies/[id]`, financial statement visualizer (Balance Sheet, P&L, Cash Flow), Standalone vs Consolidated toggle, Annual vs Quarterly periods, source traceability drawers, corporate actions and shareholding pattern tables.
+- **Status**: Completed & Verified
+- **Scope**: Multi-period financial statement matrix (Income Statement, Balance Sheet, Cash Flow), Standalone vs Consolidated toggle, Annual vs Quarterly period selector, click-to-verify Source Traceability Drawer, Shareholding Pattern viewer, Corporate Actions history table, Annual Reports & Filings archive on `/companies/[id]`, and 6th tab in Data Management.
+- **Tasks Done**:
+  - **Financial Statement Data Schemas (`backend/app/schemas/financial_statements.py`)**:
+    - Created `StatementPeriodHeader`: encapsulates period label (`FY2024`, `Q3 FY24`), audit flag, restatement flag, and fiscal dates.
+    - Created `FactProvenanceDetail`: full provenance payload including normalized value, raw filing label, raw unscaled value, unit, source document title, SHA-256 cryptographic hash, and validation status.
+    - Created `StatementRow`: sparse matrix row with metric code, metric name, unit, and period-value / period-provenance mappings.
+    - Created `FinancialStatementMatrixResponse`: top-level response delivering chronologically sorted periods, canonically ordered rows, available reporting bases, and available period types.
+    - Created `CorporateActionDetail`: structured representation of stock splits, bonus issues, dividends, and rights issues.
+    - Created `ShareholdingPatternDetail`: quarterly ownership distribution across Promoter, Pledged Promoter, FII, DII, and Public categories.
+  - **Service Layer (`backend/app/services/financial_statement_service.py`)**:
+    - Implemented `FinancialStatementService.get_statement_matrix()`: queries statements and facts, preserves nulls strictly (no fabricated zeros), resolves linked source document hashes and titles, and sorts rows by canonical accounting structure.
+    - Implemented `FinancialStatementService.get_available_periods()`: dynamically probes existing statements to configure UI toggles.
+    - Implemented `FinancialStatementService.get_corporate_actions()`: returns historical corporate restructuring events ordered by ex-date.
+    - Implemented `FinancialStatementService.get_shareholding_history()`: returns quarterly shareholding patterns chronologically.
+    - Implemented `FinancialStatementService.seed_sample_financials()`: seeds verified 3-year multi-period statements (P&L, Balance Sheet, Cash Flow), corporate actions, and shareholding patterns for benchmark verification.
+  - **API Endpoints (`backend/app/api/v1/endpoints/companies.py` & `ingestion.py`)**:
+    - `GET /api/v1/companies/{id}/statements`
+    - `GET /api/v1/companies/{id}/available-statement-periods`
+    - `GET /api/v1/companies/{id}/corporate-actions`
+    - `GET /api/v1/companies/{id}/shareholding`
+    - `POST /api/v1/companies/{id}/seed-financials`
+    - `GET /api/v1/ingestion/documents`: lists all uploaded filings with company names, file sizes, and SHA-256 hashes.
+    - `GET /api/v1/ingestion/documents/{id}/download`: file streaming response for direct PDF/document viewing and download.
+  - **Frontend Client & Types (`frontend/src/types/financials.ts`, `frontend/src/lib/api-client.ts`)**:
+    - Defined strict TypeScript types matching backend schemas.
+    - Added API client functions for statements, corporate actions, shareholding, seeding, and document downloads.
+  - **Frontend UI Components**:
+    - `StatementViewer.tsx`: Interactive multi-period statement matrix with Income Statement, Balance Sheet, and Cash Flow tabs, Consolidated/Standalone toggle, Annual/Quarterly toggle, unit formatting, and click-to-verify cell interaction.
+    - `SourceTraceabilityDrawer.tsx`: Slide-over audit drawer displaying raw filing value, raw extracted label, normalized value, source document name, SHA-256 hash, validation status, and direct PDF download link.
+    - `CorporateActionsTable.tsx`: Tabular history of stock splits, bonus issues, cash dividends, and rights with action badges.
+    - `ShareholdingViewer.tsx`: Quarterly ownership distribution with summary cards, stacked visual progress bar, and detailed table with pledged promoter warnings.
+    - `CompanyDocumentsLibrary.tsx`: Stock-level archive of uploaded annual reports and filings with 1-click download.
+    - `DataManagementView.tsx`: Added 6th tab `Uploaded Documents Library` (`documents`) for global file audit and downloads across all companies.
+    - `CompanyDetailPage` (`/companies/[id]`): Integrated tabbed navigation bar connecting all Phase 7 components plus the 18-section research suite directory overview.
+- **Test Gate**:
+  - Backend: 49/49 Pytest tests passed (`test_statements.py`, `test_integrity.py`, `test_ingestion.py`, `test_companies.py`, `test_providers.py`, `test_health.py`, `test_config.py`).
+  - Code Quality: `ruff check app tests` passing with 0 errors.
+  - Frontend: 12/12 Vitest tests passed across 6 test suites (`company-research.test.tsx`, `data-management.test.tsx`, `discovery.test.tsx`, `health.test.tsx`, `sidebar.test.tsx`, `theme.test.tsx`).
+  - Production Build: Next.js production build succeeded with 13/13 routes statically/dynamically compiled.
+
+---
+
+## Inter-Phase Milestone: UI/UX Realignment & Client-Side Stability Overhaul
+- **Status**: Completed & Verified
+- **Scope**: Complete realignment of frontend UI with `/ui-mockups` and `equity-intelligence-ui` skill rules, plus exhaustive resolution of client-side React hydration and type exceptions.
+- **Tasks Done**:
+  - **Atmospheric Palette & Tokens**:
+    - Integrated `--bg-base: #0B1220`, `--bg-card: #101828` (Sambucus), `--accent: #00D3F3` (Sky), `--accent-2: #FDC700` (Yellow), `--up: #22C55E`, `--down: #EF4444`.
+    - Added bottom teal glow gradient (`radial-gradient(ellipse at 50% 110%, rgba(0,211,243,.25), transparent 60%)`) and dot-matrix background pattern.
+  - **Shell Architecture**:
+    - 64px Sambucus left rail with circular ring active indicators, hover tooltips, and bottom utility cluster.
+    - Centered top-bar search pill (`~420px`), API health dot, and freshness chip.
+    - 320px collapsible right Insight Rail with sparkline watchlists, valuation anchor, and equity sector pulse.
+    - 12-column dashboard layout with macro benchmark cards, segmented tick-bar portfolio card, and real market movers.
+  - **Strict Data-Integrity Primitives**:
+    - `<MissingValue reason="..." />`: Displays `N/A` with tooltip; never blank or fabricated `0`.
+    - `<ValidationBadge />`: Displays verified, cross-checked, needs review, and unverified states.
+    - `<DeltaChip />`: Directional color-coded pills strictly for price/returns.
+    - `lib/format.ts`: Full Indian numbering support (`en-IN`) for INR, Crores, percentages, and dates.
+  - **Client-Side Exception & Hydration Resolution**:
+    - Resolved `TypeError: currentPrice.toFixed is not a function`: Backend API serializes PostgreSQL/SQLite Decimal numbers as strings (e.g., `"1336.3"`). Updated `CandlestickChart`, `CorporateActionsTable`, `StatementViewer`, `Sparkline`, and `DeltaChip` to safely coerce and parse numbers (`parseFloat` / `Number()`).
+    - Fixed SSR vs client hydration mismatch in `CandlestickChart`: Replaced non-deterministic `Math.random()` in render with a seeded pseudo-random formula (`pseudoRand`) and deterministic date strings (`d.getUTCDate() ${MONTHS[...]}`), ensuring identical HTML between server and client.
+    - Replaced random gradient IDs in `Sparkline` and `CandlestickChart` with React's `useId()` (`cleanId = reactId.replace(/:/g, "")`).
+    - Added optional chaining safeguards on `company?.securities?.find(...)` across `CompanyDetailPage` and `StockDiscoveryView`.
+- **Test Gate**:
+  - Frontend Vitest: 12/12 passed across 6 test suites.
+  - Next.js Build: Successfully compiled all 13 routes (`pnpm build`).
+  - Backend Pytest: 49/49 passed.
+
+---
+
+## Phase 8: Financial Analysis Engine
+- **Status**: Completed & Verified
+- **Scope**: Deterministic Python calculation engine for multi-year compounded growth ratios (3Y/5Y CAGR and YoY for Revenue, EBITDA, PAT, EPS), profitability metrics (Operating Margin, EBITDA Margin, Net Margin, ROE, ROCE, ROA), 3-stage DuPont ROE decomposition, industrial solvency & capital structure (D/E, Interest Coverage, Current & Quick Ratios), operating efficiency (Working Capital Days, Cash Conversion Cycle, Asset Turnover, DIO, DSO, DPO), institutional quality scores (Altman Z-Score with 4-factor emerging/non-manufacturing model and Piotroski 9-Factor F-Score), strict sector-aware guardrails isolating Banks and NBFCs from corporate bankruptcy formulas, and interactive "Analysis & Health" frontend research tab.
+- **Tasks Done**:
+  - **Deterministic Financial Calculation Engine (`backend/app/calculations/`)**:
+    - `growth.py`: Implemented `calculate_cagr(start_val, end_val, years)` with zero-division and negative base year guards, plus `calculate_yoy_growth(current, previous)`.
+    - `profitability.py`: Implemented `operating_margin`, `ebitda_margin`, `net_profit_margin`, `return_on_equity` (with negative equity guard), `return_on_capital_employed` (EBIT ÷ Capital Employed), `return_on_assets`, and 3-stage `dupont_analysis` ($\text{ROE} \equiv \text{Net Margin} \times \text{Asset Turnover} \times \text{Financial Leverage}$).
+    - `solvency.py`: Implemented `debt_to_equity`, `interest_coverage` (with zero-interest and net-cash guards), `current_ratio`, `quick_ratio` (excluding inventories), and `debt_to_assets`.
+    - `efficiency.py`: Implemented `asset_turnover`, `inventory_turnover`, `debtor_days` (DSO), `inventory_days` (DIO), `creditor_days` (DPO), `cash_conversion_cycle` ($\text{CCC} \equiv \text{DIO} + \text{DSO} - \text{DPO}$), and `working_capital_days`.
+    - `scores.py`:
+      - Implemented `calculate_altman_z_score`: 4-factor emerging market / non-manufacturing model ($Z = 6.56X_1 + 3.26X_2 + 6.72X_3 + 1.05X_4$) and 5-factor manufacturing model ($Z = 1.2X_1 + 1.4X_2 + 3.3X_3 + 0.6X_4 + 0.999X_5$) with automated zone classifications (`SAFE` > 2.90, `GREY` 1.23 - 2.90, `DISTRESS` < 1.23).
+      - Implemented `calculate_piotroski_f_score`: Evaluates 9 fundamental criteria across 3 distinct pillars:
+        1. *Profitability (4 pts)*: ROA > 0, CFO > 0, $\Delta$ROA > 0, Quality of Earnings (CFO > ROA / PAT).
+        2. *Leverage & Liquidity (3 pts)*: $\Delta$Long-term Debt $\le$ 0, $\Delta$Current Ratio > 0, No Equity Dilution.
+        3. *Operating Efficiency (2 pts)*: $\Delta$Gross Margin > 0, $\Delta$Asset Turnover > 0.
+        Classifies rating as `VERY_STRONG` (8-9), `MODERATE` (5-7), or `WEAK` (0-4).
+    - `banking.py`: Implemented banking-specific ratios: `net_interest_margin` ($\text{NII} \div \text{Assets}$), `casa_ratio` (Low-cost deposit strength), `cost_to_income_ratio` ($\text{Opex} \div \text{Income}$), `npa_pct` (Gross & Net NPA %), and `capital_adequacy_ratio` (CAR % vs RBI 11.5% Basel-III mandate).
+    - `__init__.py`: Cleanly re-exported calculation functions.
+  - **Pydantic Schemas (`backend/app/schemas/analysis.py`)**:
+    - Created `GrowthRatios`, `DuPontDecomposition`, `ProfitabilityRatios`, `SolvencyRatios`, `OperatingEfficiencyRatios`, `BankingRatios`, `HistoricalRatioPeriod`, `CompanyRatiosResponse`.
+    - Created `AltmanZScoreDetail`, `PiotroskiFactorItem`, `PiotroskiFScoreDetail`, `QualityScoresResponse`.
+  - **Analysis Service & Cross-Statement Period Aggregation (`backend/app/services/analysis_service.py`)**:
+    - Built `AnalysisService` with `get_company_ratios()` and `get_company_quality_scores()`.
+    - Implemented multi-statement fact consolidation by fiscal year (`period_end`), unifying facts from Income Statement, Balance Sheet, and Cash Flow into a single metric map per fiscal period.
+    - Built multi-year historical ratio progression trend (`_compute_historical_trend`) returning annual metrics across all audited filing years.
+    - Built strict **Banking vs Industrial Isolation**:
+      - If `company.is_financial_sector` is true:
+        - Bypasses corporate solvency (D/E, Current/Quick) with explicit `bypass_reason`.
+        - Bypasses Cash Conversion Cycle and Inventory Turnover with explicit `bypass_reason`.
+        - Bypasses Altman Z-Score with `BANKING_BYPASS` because customer deposits are operating liabilities rather than commercial debts, preventing false insolvency flags.
+        - Calculates regulatory banking metrics (NIM, CASA, NPA, CAR) instead.
+  - **API Endpoints (`backend/app/api/v1/endpoints/companies.py`)**:
+    - Added `GET /api/v1/companies/{id}/ratios?reporting_basis=CONSOLIDATED`
+    - Added `GET /api/v1/companies/{id}/quality-scores?reporting_basis=CONSOLIDATED`
+  - **Frontend UI & Components**:
+    - `frontend/src/types/analysis.ts`: Strict TypeScript interfaces mirroring backend schemas.
+    - `frontend/src/lib/api-client.ts`: Added `fetchCompanyRatios()` and `fetchCompanyQualityScores()`.
+    - `frontend/src/lib/format.ts`: Added `formatDays(val)` helper.
+    - `frontend/src/components/company/FinancialAnalysisTab.tsx`:
+      - **Quality & Financial Distress Scores**: Altman Z-Score with color-coded Safe/Grey/Distress badges and 4-factor breakdown; Piotroski 9-factor F-score with 3-pillar breakdown and expandable 9-factor checklist.
+      - **DuPont ROE 3-Stage Decomposition**: Visual pipeline ($\text{Net Margin} \times \text{Asset Turnover} \times \text{Leverage} = \text{ROE}$) with institutional takeaway on margin pricing power vs. debt-driven returns.
+      - **Compounded Growth (CAGR) Table**: 3Y/5Y CAGR and YoY for Revenue, EBITDA, PAT, and EPS with strict missing value tooltips.
+      - **Solvency & Operating Efficiency**: Debt to Equity, Interest Coverage, Current & Quick Ratios, plus Cash Conversion Cycle (DIO + DSO - DPO).
+      - **Banking & Regulatory Metrics Card**: Displays NIM %, CASA %, Gross NPA %, Net NPA %, Cost-to-Income %, and CAR % when `is_financial_sector` is true.
+      - **Historical Financial Ratio Progression**: Multi-year progression table across all audited fiscal periods.
+    - `frontend/src/app/companies/[id]/page.tsx`: Integrated the `Analysis & Health` tab into the main company research navigation.
+- **Test Gate**:
+  - Backend: 65/65 Pytest tests passed (`test_analysis.py` with 16 unit, service, and API integration tests; all 49 existing tests passing).
+  - Frontend: 17/17 Vitest tests passed across 7 test suites (`analysis-tab.test.tsx`, `company-research.test.tsx`, `data-management.test.tsx`, `discovery.test.tsx`, `health.test.tsx`, `sidebar.test.tsx`, `theme.test.tsx`).
+  - Production Build: Next.js production build succeeded with 13/13 routes statically/dynamically compiled.
+
+---
+
+## Phase 9: Screening Engine
+- **Status**: Completed & Verified
+- **Scope**: Multi-parameter equity screener supporting fundamental valuation multiples (P/E, P/B, EV/EBITDA, Market Cap), profitability & return metrics (ROCE, ROE, ROA, Operating Margin, Net Margin), industrial solvency (D/E, Interest Coverage, Current Ratio), cash cycle efficiency, multi-year growth (3Y/5Y CAGR and YoY), quality health scores (Altman Z, Piotroski F), and specialized banking metrics (NIM %, CASA %, NPA %, CAR %), preset institutional screens, dynamic AST filter compiler with AND/OR conjunctions and `between` operator, strict Data Integrity NULL handling, saved screens persistence, RFC 4180 CSV export, and complete `/screener` UI.
+- **Tasks Done**:
+  - **Database Model & Migration (`backend/app/models/screening.py`, `backend/alembic/versions/0004_screening_engine.py`)**:
+    - Created `SavedScreen` model with `id`, `name`, `description`, `filter_expression` (JSONB/JSON AST), `sort_by`, `sort_direction`, `is_preset`, `created_at`, `updated_at`.
+    - Created and executed Alembic migration `0004_screening_engine` cleanly applying `saved_screens` table and indices to PostgreSQL 16.
+  - **Filter AST & Dynamic Compiler (`backend/app/screening/`)**:
+    - `models.py`: Created `FilterCondition`, `FilterExpression` (with `AND` / `OR` conjunction), `ScreenRequest`, `ScreenedCompanyItem`, `ScreenResponse`, `SavedScreenCreate`, `SavedScreenRead`, `SavedScreenUpdate`.
+    - `compiler.py`: Dynamic evaluator supporting `>`, `>=`, `<`, `<=`, `==`, `!=`, `between` (range), `contains`, `in`, `not_in`. Strictly enforces Data Integrity Rule 1 (`NULL != 0`): If a metric is `None`, numerical comparisons evaluate strictly to `False` (never coerced to `0` or matching `< 0.5`).
+    - `presets.py`: Pre-seeded 5 institutional preset screens:
+      1. *"Buffett Moats"*: ROCE $\ge 18\%$, ROE $\ge 18\%$, D/E $\le 0.50x$, 3Y Revenue CAGR $\ge 10\%$.
+      2. *"High Growth Compounders"*: 3Y Revenue CAGR $\ge 15\%$, 3Y PAT CAGR $\ge 15\%$, ROCE $\ge 15\%$.
+      3. *"Low Debt Cannibals"*: D/E $\le 0.20x$, Interest Coverage $\ge 8.0x$, Net Profit Margin $\ge 8\%$.
+      4. *"Value Dividend Kings"*: P/E $\le 25x$, ROCE $\ge 15\%$, D/E $\le 0.50x$.
+      5. *"Institutional Financial Titans"*: `is_financial_sector == True`, ROE $\ge 12\%$.
+  - **Screening Service (`backend/app/services/screening_service.py`)**:
+    - Built `ScreeningService` with `get_screening_universe()`, `run_screen()`, `export_screen_csv()`, `get_preset_screens()`, and full CRUD for `SavedScreen`.
+    - Implemented strict NULLS-LAST sorting across all ascending/descending metric sorts.
+    - Implemented financial sector inclusion/exclusion toggle (`include_financials`).
+    - Implemented RFC 4180 CSV export generating full 26-column downloadable file with "N/A" for missing figures.
+  - **API Endpoints (`backend/app/api/v1/endpoints/screening.py`)**:
+    - `POST /api/v1/screening/run`: Executes dynamic screen with AST filters, sorting, and pagination.
+    - `POST /api/v1/screening/export-csv`: Streams downloadable `screener_export.csv` file.
+    - `GET /api/v1/screening/presets`: Returns built-in institutional screens.
+    - `GET /api/v1/screening/saved`: Returns user-saved screens from the database.
+    - `POST /api/v1/screening/saved`: Saves a custom screening configuration.
+    - `GET /api/v1/screening/saved/{id}`: Retrieves saved screen by ID.
+    - `PUT /api/v1/screening/saved/{id}`: Updates existing saved screen.
+    - `DELETE /api/v1/screening/saved/{id}`: Deletes a saved screen.
+    - Registered router in `backend/app/api/v1/router.py`.
+  - **Frontend UI & Components**:
+    - `frontend/src/types/screener.ts`: TypeScript definitions matching backend screening schemas.
+    - `frontend/src/lib/api-client.ts`: Added `runScreen()`, `exportScreenCsv()`, `fetchPresetScreens()`, `fetchSavedScreens()`, `createSavedScreen()`, `deleteSavedScreen()`.
+    - `frontend/src/components/screener/ScreenerView.tsx`:
+      - **Preset Screener Bar**: One-click pills to load institutional screens.
+      - **Interactive Filter Builder**: Metric picker (categorized across Valuation, Profitability, Solvency, Growth, Quality, Banking), Operator picker, dynamic inputs, unit badges, industrial/banking badges, Add/Remove condition buttons, `AND`/`OR` conjunction toggle, and Include Financials checkbox.
+      - **Action Toolbar**: "Execute Screen", "Reset All", "Save Screen" (with modal dialog), and "Export CSV".
+      - **Results Table**: Dark Sambucus theme, sortable columns, dual-exchange badges, links to `/companies/[id]`, Altman Z color-coded pills, Piotroski score pills, and strict `<MissingValue reason="..." />` handling.
+      - **Pagination Controls**: Page numbers and previous/next navigation.
+    - `frontend/src/app/screener/page.tsx`: Integrated `Header` and mounted `ScreenerView`.
+- **Test Gate**:
+  - Backend: 78/78 Pytest tests passed (`test_screening.py` with 13 compiler, service, and API integration tests; all 65 existing tests passing).
+  - Frontend: 21/21 Vitest tests passed across 8 test suites (`screener.test.tsx`, `analysis-tab.test.tsx`, `company-research.test.tsx`, `data-management.test.tsx`, `discovery.test.tsx`, `health.test.tsx`, `sidebar.test.tsx`, `theme.test.tsx`).
+  - Production Build: Next.js production build succeeded with 13/13 routes statically/dynamically compiled (0 errors).
+
+---
+
+## Phase 10: EOD Charts & Technical Analysis
+- **Status**: Ready to Begin
+- **Scope**: EOD candlestick and volume charts via TradingView Lightweight Charts, mathematical calculation engine for technical indicators (SMA, EMA, RSI, MACD, Bollinger Bands, historical returns, drawdowns, support/resistance levels), responsive indicators toolbar, and chart tab integration into `/companies/[id]`.

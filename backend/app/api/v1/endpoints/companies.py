@@ -4,13 +4,25 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
+from app.schemas.analysis import (
+    CompanyRatiosResponse,
+    QualityScoresResponse,
+)
 from app.schemas.company import (
     CompanyCreate,
     CompanyRead,
     CompanySearchResponse,
     SectorRead,
 )
+from app.schemas.financial_statements import (
+    AvailablePeriodsResponse,
+    CorporateActionDetail,
+    FinancialStatementMatrixResponse,
+    ShareholdingPatternDetail,
+)
+from app.services.analysis_service import AnalysisService
 from app.services.company_service import CompanyService
+from app.services.financial_statement_service import FinancialStatementService
 
 router = APIRouter(prefix="/companies", tags=["Companies & Stock Discovery"])
 
@@ -112,3 +124,129 @@ def lookup_and_add_company(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(exc),
         ) from exc
+
+
+@router.get(
+    "/{company_id}/statements",
+    response_model=FinancialStatementMatrixResponse,
+    summary="Get multi-period financial statement matrix with source provenance",
+)
+def get_company_statements(
+    company_id: int,
+    statement_type: str = Query("INCOME_STATEMENT", description="INCOME_STATEMENT, BALANCE_SHEET, or CASH_FLOW"),
+    reporting_basis: str = Query("CONSOLIDATED", description="CONSOLIDATED or STANDALONE"),
+    period_type: str = Query("ANNUAL", description="ANNUAL or QUARTERLY"),
+    db: Session = Depends(get_db),
+) -> FinancialStatementMatrixResponse:
+    """Retrieve normalized multi-period financial statement matrix with provenance links and zero fabricated values."""
+    service = FinancialStatementService(db)
+    try:
+        return service.get_statement_matrix(
+            company_id=company_id,
+            statement_type=statement_type,
+            reporting_basis=reporting_basis,
+            period_type=period_type,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+
+@router.get(
+    "/{company_id}/available-statement-periods",
+    response_model=AvailablePeriodsResponse,
+    summary="Inspect available reporting bases and period types for a company",
+)
+def get_available_statement_periods(
+    company_id: int,
+    db: Session = Depends(get_db),
+) -> AvailablePeriodsResponse:
+    """Inspect which financial statements and periods exist for a company to configure UI controls."""
+    service = FinancialStatementService(db)
+    return service.get_available_periods(company_id=company_id)
+
+
+@router.get(
+    "/{company_id}/corporate-actions",
+    response_model=list[CorporateActionDetail],
+    summary="Get historical corporate actions (dividends, splits, bonuses, rights)",
+)
+def get_company_corporate_actions(
+    company_id: int,
+    db: Session = Depends(get_db),
+) -> list[CorporateActionDetail]:
+    """Retrieve chronologically ordered corporate actions and share multipliers for a company."""
+    service = FinancialStatementService(db)
+    return service.get_corporate_actions(company_id=company_id)
+
+
+@router.get(
+    "/{company_id}/shareholding",
+    response_model=list[ShareholdingPatternDetail],
+    summary="Get quarterly shareholding pattern and ownership breakdown",
+)
+def get_company_shareholding(
+    company_id: int,
+    db: Session = Depends(get_db),
+) -> list[ShareholdingPatternDetail]:
+    """Retrieve quarterly shareholding patterns (promoter, pledged, FII, DII, public)."""
+    service = FinancialStatementService(db)
+    return service.get_shareholding_history(company_id=company_id)
+
+
+@router.post(
+    "/{company_id}/seed-financials",
+    summary="Seed multi-period audited financials, corporate actions, and shareholding for benchmarking",
+)
+def seed_company_financials(
+    company_id: int,
+    db: Session = Depends(get_db),
+):
+    """Seed multi-year audited financial statements, corporate actions, and ownership patterns for a company."""
+    service = FinancialStatementService(db)
+    try:
+        return service.seed_sample_financials(company_id=company_id)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+
+@router.get(
+    "/{company_id}/ratios",
+    response_model=CompanyRatiosResponse,
+    summary="Get comprehensive financial ratios (Growth, Profitability, Solvency, Efficiency, DuPont, Banking)",
+)
+def get_company_ratios(
+    company_id: int,
+    reporting_basis: str = Query("CONSOLIDATED", description="STANDALONE or CONSOLIDATED"),
+    db: Session = Depends(get_db),
+) -> CompanyRatiosResponse:
+    """Calculate and return full suite of deterministic financial ratios for a company."""
+    service = AnalysisService(db)
+    try:
+        return service.get_company_ratios(company_id=company_id, reporting_basis=reporting_basis)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+
+@router.get(
+    "/{company_id}/quality-scores",
+    response_model=QualityScoresResponse,
+    summary="Get financial quality and distress scores (Altman Z-Score & 9-Factor Piotroski F-Score)",
+)
+def get_company_quality_scores(
+    company_id: int,
+    reporting_basis: str = Query("CONSOLIDATED", description="STANDALONE or CONSOLIDATED"),
+    db: Session = Depends(get_db),
+) -> QualityScoresResponse:
+    """Calculate and return Altman Z-Score and Piotroski F-Score with detailed factor attribution."""
+    service = AnalysisService(db)
+    try:
+        return service.get_company_quality_scores(company_id=company_id, reporting_basis=reporting_basis)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+

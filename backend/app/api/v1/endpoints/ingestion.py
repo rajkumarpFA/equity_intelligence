@@ -1,8 +1,10 @@
 """FastAPI endpoints for data ingestion, background job audits, and file uploads."""
 
 import math
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -14,6 +16,7 @@ from app.schemas.ingestion import (
     IngestionJobResponse,
     RejectedRecordListResponse,
     ScheduledJobResponse,
+    SourceDocumentListResponse,
     SourceDocumentResponse,
     TriggerBenchmarkSyncRequest,
     TriggerPriceSyncRequest,
@@ -192,6 +195,63 @@ async def upload_report(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:  # noqa: BLE001
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Upload failed: {e!s}")
+
+
+@router.get(
+    "/documents",
+    response_model=SourceDocumentListResponse,
+    summary="List uploaded corporate annual reports, filings, and datasets",
+)
+def list_documents(
+    company_id: int | None = Query(None, description="Filter by company ID"),
+    fiscal_year: int | None = Query(None, description="Filter by fiscal year"),
+    document_type: str | None = Query(None, description="Filter by document type"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    """List uploaded source documents with SHA-256 integrity and company metadata."""
+    repo = IngestionRepository(db)
+    offset = (page - 1) * page_size
+    total, items = repo.list_source_documents(
+        company_id=company_id,
+        fiscal_year=fiscal_year,
+        document_type=document_type,
+        limit=page_size,
+        offset=offset,
+    )
+    return SourceDocumentListResponse(
+        total=total,
+        items=[SourceDocumentResponse(**item) for item in items],
+    )
+
+
+@router.get(
+    "/documents/{document_id}/download",
+    summary="Download or view an uploaded report PDF or file",
+)
+def download_document(
+    document_id: int,
+    db: Session = Depends(get_db),
+):
+    """Stream an uploaded source document directly by ID."""
+    repo = IngestionRepository(db)
+    doc = repo.get_source_document_by_id(document_id)
+    if not doc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+
+    file_path = Path(doc.file_path)
+    if not file_path.exists() or not file_path.is_file():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"File not found on storage: {doc.file_name}",
+        )
+
+    return FileResponse(
+        path=str(file_path),
+        filename=doc.file_name,
+        media_type=doc.mime_type or "application/pdf",
+    )
 
 
 @router.get(

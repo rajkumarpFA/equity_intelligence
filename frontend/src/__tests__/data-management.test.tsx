@@ -68,6 +68,23 @@ vi.mock("@/lib/api-client", () => ({
   triggerBenchmarkSync: vi.fn().mockResolvedValue([]),
   uploadCsvStatement: vi.fn().mockResolvedValue({ id: 2, status: "COMPLETED" }),
   uploadReportDocument: vi.fn().mockResolvedValue({ id: 1, is_duplicate: false }),
+  fetchSourceDocuments: vi.fn().mockResolvedValue({
+    total: 1,
+    items: [
+      {
+        id: 1,
+        file_name: "Annual_Report_FY24.pdf",
+        sha256_hash: "abcdef1234567890abcdef1234567890",
+        file_size_bytes: 2048576,
+        mime_type: "application/pdf",
+        document_type: "ANNUAL_REPORT",
+        company_name: "Reliance Industries",
+        company_symbol: "RELIANCE",
+        upload_timestamp: "2026-11-13T06:00:00Z",
+      },
+    ],
+  }),
+  getDocumentDownloadUrl: vi.fn().mockReturnValue("http://localhost:8000/api/v1/ingestion/documents/1/download"),
 }));
 
 function renderWithQueryClient(ui: React.ReactElement) {

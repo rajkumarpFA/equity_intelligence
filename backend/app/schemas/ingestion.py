@@ -92,10 +92,19 @@ class SourceDocumentResponse(BaseModel):
     mime_type: str
     document_type: str
     company_id: int | None = None
+    company_name: str | None = None
+    company_symbol: str | None = None
     fiscal_year: int | None = None
     fiscal_period: str | None = None
     upload_timestamp: datetime
     is_duplicate: bool = False
+
+
+class SourceDocumentListResponse(BaseModel):
+    """Paginated collection of uploaded documents and annual reports."""
+
+    total: int
+    items: list[SourceDocumentResponse]
 
 
 class ScheduledJobResponse(BaseModel):

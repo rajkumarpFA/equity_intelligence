@@ -11,12 +11,7 @@ export const metadata: Metadata = {
 
 const themeInitScript = `
 try {
-  const s = localStorage.getItem("color-scheme");
-  if (s === "dark" || (!s && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
-    document.documentElement.classList.add("dark");
-  } else {
-    document.documentElement.classList.remove("dark");
-  }
+  document.documentElement.classList.add("dark");
 } catch (e) {}
 `;
 
@@ -26,16 +21,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="dark" suppressHydrationWarning>
       <head>
-        <meta name="color-scheme" content="light dark" />
+        <meta name="color-scheme" content="dark" />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body className="flex h-screen overflow-hidden bg-slate-50 text-slate-900 transition-colors dark:bg-[#090d16] dark:text-slate-100 antialiased">
+      <body className="flex h-screen overflow-hidden bg-[var(--bg-base)] text-[var(--text-1)] antialiased font-sans select-none bg-teal-glow">
         <QueryProvider>
-          <Sidebar />
-          <div className="flex flex-1 flex-col overflow-hidden">
-            {children}
+          <div className="flex h-full w-full overflow-hidden bg-matrix-dots">
+            <Sidebar />
+            <div className="flex flex-1 flex-col overflow-hidden min-w-0">
+              {children}
+            </div>
           </div>
         </QueryProvider>
       </body>

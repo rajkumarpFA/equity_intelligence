@@ -92,6 +92,75 @@ class IngestionRepository:
         stmt = select(SourceDocument).where(SourceDocument.sha256_hash == sha256_hash)
         return self.db.scalars(stmt).first()
 
+    def get_source_document_by_id(self, doc_id: int) -> SourceDocument | None:
+        stmt = select(SourceDocument).where(SourceDocument.id == doc_id)
+        return self.db.scalars(stmt).first()
+
+    def list_source_documents(
+        self,
+        company_id: int | None = None,
+        fiscal_year: int | None = None,
+        document_type: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> tuple[int, list[dict[str, Any]]]:
+        """List source documents with company metadata."""
+        from sqlalchemy import func
+
+        from app.models.company import Company, Security
+
+        stmt = select(SourceDocument)
+        if company_id is not None:
+            stmt = stmt.where(SourceDocument.company_id == company_id)
+        if fiscal_year is not None:
+            stmt = stmt.where(SourceDocument.fiscal_year == fiscal_year)
+        if document_type is not None:
+            stmt = stmt.where(SourceDocument.document_type == document_type)
+
+        total_stmt = select(func.count()).select_from(stmt.subquery())
+        total = self.db.scalar(total_stmt) or 0
+
+        stmt = stmt.order_by(desc(SourceDocument.upload_timestamp)).limit(limit).offset(offset)
+        docs = list(self.db.scalars(stmt).all())
+
+        items: list[dict[str, Any]] = []
+        company_cache: dict[int, tuple[str, str | None]] = {}
+
+        for doc in docs:
+            c_name = None
+            c_symbol = None
+            if doc.company_id:
+                if doc.company_id not in company_cache:
+                    comp = self.db.get(Company, doc.company_id)
+                    if comp:
+                        # find primary security or first security
+                        sec_stmt = select(Security).where(Security.company_id == comp.id)
+                        secs = list(self.db.scalars(sec_stmt).all())
+                        primary_sec = next((s for s in secs if s.is_primary), secs[0] if secs else None)
+                        company_cache[doc.company_id] = (comp.name, primary_sec.symbol if primary_sec else None)
+                    else:
+                        company_cache[doc.company_id] = (None, None)
+                c_name, c_symbol = company_cache[doc.company_id]
+
+            items.append({
+                "id": doc.id,
+                "sha256_hash": doc.sha256_hash,
+                "file_name": doc.file_name,
+                "file_path": doc.file_path,
+                "file_size_bytes": doc.file_size_bytes,
+                "mime_type": doc.mime_type,
+                "document_type": doc.document_type,
+                "company_id": doc.company_id,
+                "company_name": c_name,
+                "company_symbol": c_symbol,
+                "fiscal_year": doc.fiscal_year,
+                "fiscal_period": doc.fiscal_period,
+                "upload_timestamp": doc.upload_timestamp,
+                "is_duplicate": False,
+            })
+
+        return total, items
+
     def create_source_document(
         self,
         sha256_hash: str,

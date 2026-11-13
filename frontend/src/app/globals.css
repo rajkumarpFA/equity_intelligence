@@ -3,27 +3,95 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: light dark;
-  --background: #f8fafc;
-  --foreground: #0f172a;
-}
-
-:root.dark,
-:root:has(> head > meta[name="color-scheme"][content="dark"]) {
   color-scheme: dark;
-  --background: #090d16;
-  --foreground: #f1f5f9;
+  --bg-base: #0B1220;          /* app background (navy-black) */
+  --bg-card: #101828;          /* Sambucus: cards */
+  --bg-elevated: #172033;      /* popovers, drawers */
+  --bg-input: #070B14;         /* inputs */
+  --border: rgba(255, 255, 255, 0.08);
+
+  --accent: #00D3F3;           /* Sky: primary action, active tab, focus, chart line */
+  --accent-2: #FDC700;         /* Yellow: Upgrade/emphasis, 2nd series, MA, AI/valuation */
+  --neutral-series: #6B7280;
+
+  --up: #22C55E;               /* price/performance direction ONLY */
+  --down: #EF4444;             /* price/performance direction ONLY */
+  --warn: #F59E0B;             /* data-quality states (never up/down colours) */
+  --info: #38BDF8;             /* data-quality states (never up/down colours) */
+
+  --text-1: #FFFFFF;
+  --text-2: #9CA3AF;
+  --text-3: #6B7280;
+
+  --radius-card: 16px;
+  --radius-input: 8px;
+  --radius-pill: 999px;
+
+  --font: "Roobert", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  --background: var(--bg-base);
+  --foreground: var(--text-1);
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: var(--text-1);
+  background-color: var(--bg-base);
+  font-family: var(--font);
   margin: 0;
   padding: 0;
   -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
 }
 
 * {
   box-sizing: border-box;
+}
+
+/* Tabular nums for all financial figures and prices */
+.tabular-nums,
+[data-tabular-nums] {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Atmospheric teal bottom glow gradient from design spec */
+.bg-teal-glow {
+  background-image: radial-gradient(ellipse at 50% 110%, rgba(0, 211, 243, 0.22), transparent 60%);
+}
+
+/* Dotted matrix background effect */
+.bg-matrix-dots {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Glass card styling */
+.glass-card {
+  background: rgba(16, 24, 40, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+}
+
+/* Soft teal glow on selected/active elements */
+.glow-teal {
+  box-shadow: 0 0 24px rgba(0, 211, 243, 0.25);
+}
+
+/* Custom sleek scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.24);
 }

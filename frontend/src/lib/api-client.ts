@@ -1,3 +1,19 @@
+import type {
+  AvailablePeriodsResponse,
+  CorporateActionDetail,
+  FinancialStatementMatrixResponse,
+  ShareholdingPatternDetail,
+  SourceDocumentListResponse,
+} from "@/types/financials";
+import type {
+  CompanyRatiosResponse,
+  QualityScoresResponse,
+} from "@/types/analysis";
+import type {
+  SavedScreen,
+  ScreenRequest,
+  ScreenResponse,
+} from "@/types/screener";
 import type { HealthResponse } from "@/types/health";
 import type {
   CompanyRead,
@@ -231,3 +247,149 @@ export async function adjustPricesForCorporateActions(
     }
   );
 }
+
+export async function fetchCompanyStatements(
+  companyId: number,
+  statementType: string = "INCOME_STATEMENT",
+  reportingBasis: string = "CONSOLIDATED",
+  periodType: string = "ANNUAL"
+): Promise<FinancialStatementMatrixResponse> {
+  const params = new URLSearchParams({
+    statement_type: statementType,
+    reporting_basis: reportingBasis,
+    period_type: periodType,
+  });
+  return apiFetch<FinancialStatementMatrixResponse>(
+    `/companies/${companyId}/statements?${params.toString()}`
+  );
+}
+
+export async function fetchAvailableStatementPeriods(
+  companyId: number
+): Promise<AvailablePeriodsResponse> {
+  return apiFetch<AvailablePeriodsResponse>(
+    `/companies/${companyId}/available-statement-periods`
+  );
+}
+
+export async function fetchCompanyCorporateActions(
+  companyId: number
+): Promise<CorporateActionDetail[]> {
+  return apiFetch<CorporateActionDetail[]>(
+    `/companies/${companyId}/corporate-actions`
+  );
+}
+
+export async function fetchCompanyShareholding(
+  companyId: number
+): Promise<ShareholdingPatternDetail[]> {
+  return apiFetch<ShareholdingPatternDetail[]>(
+    `/companies/${companyId}/shareholding`
+  );
+}
+
+export async function seedCompanyFinancials(
+  companyId: number
+): Promise<{ status: string; statements_created: number; facts_created: number; company_name: string }> {
+  return apiFetch<{ status: string; statements_created: number; facts_created: number; company_name: string }>(
+    `/companies/${companyId}/seed-financials`,
+    {
+      method: "POST",
+    }
+  );
+}
+
+export async function fetchSourceDocuments(params?: {
+  company_id?: number;
+  fiscal_year?: number;
+  document_type?: string;
+  page?: number;
+  page_size?: number;
+}): Promise<SourceDocumentListResponse> {
+  const query = new URLSearchParams();
+  if (params?.company_id) query.set("company_id", params.company_id.toString());
+  if (params?.fiscal_year) query.set("fiscal_year", params.fiscal_year.toString());
+  if (params?.document_type) query.set("document_type", params.document_type);
+  if (params?.page) query.set("page", params.page.toString());
+  if (params?.page_size) query.set("page_size", params.page_size.toString());
+
+  const qStr = query.toString();
+  return apiFetch<SourceDocumentListResponse>(
+    `/ingestion/documents${qStr ? `?${qStr}` : ""}`
+  );
+}
+
+export function getDocumentDownloadUrl(documentId: number): string {
+  return `${API_BASE_URL}/ingestion/documents/${documentId}/download`;
+}
+
+export async function fetchCompanyRatios(
+  companyId: number,
+  reportingBasis: string = "CONSOLIDATED"
+): Promise<CompanyRatiosResponse> {
+  return apiFetch<CompanyRatiosResponse>(
+    `/companies/${companyId}/ratios?reporting_basis=${encodeURIComponent(reportingBasis)}`
+  );
+}
+
+export async function fetchCompanyQualityScores(
+  companyId: number,
+  reportingBasis: string = "CONSOLIDATED"
+): Promise<QualityScoresResponse> {
+  return apiFetch<QualityScoresResponse>(
+    `/companies/${companyId}/quality-scores?reporting_basis=${encodeURIComponent(reportingBasis)}`
+  );
+}
+
+// -------------------------------------------------------------
+// Screening Engine API Functions
+// -------------------------------------------------------------
+
+export async function runScreen(request: ScreenRequest): Promise<ScreenResponse> {
+  return apiFetch<ScreenResponse>("/screening/run", {
+    method: "POST",
+    body: JSON.stringify(request),
+  });
+}
+
+export async function exportScreenCsv(request: ScreenRequest): Promise<Blob> {
+  const url = `${API_BASE_URL}/screening/export-csv`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) {
+    throw new ApiError(`CSV Export failed (${response.status})`, response.status);
+  }
+  return response.blob();
+}
+
+export async function fetchPresetScreens(): Promise<SavedScreen[]> {
+  return apiFetch<SavedScreen[]>("/screening/presets");
+}
+
+export async function fetchSavedScreens(): Promise<SavedScreen[]> {
+  return apiFetch<SavedScreen[]>("/screening/saved");
+}
+
+export async function createSavedScreen(payload: {
+  name: string;
+  description?: string;
+  filter_expression: ScreenRequest["filter_expression"];
+  sort_by?: string;
+  sort_direction?: "asc" | "desc";
+}): Promise<SavedScreen> {
+  return apiFetch<SavedScreen>("/screening/saved", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteSavedScreen(screenId: number): Promise<{ status: string }> {
+  return apiFetch<{ status: string }>(`/screening/saved/${screenId}`, {
+    method: "DELETE",
+  });
+}
+
+

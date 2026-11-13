@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   Clock,
   Database,
+  Download,
   FileSpreadsheet,
   FileText,
   Play,
@@ -21,6 +22,8 @@ import {
   fetchIngestionJobs,
   fetchRejectedRecords,
   fetchScheduledJobs,
+  fetchSourceDocuments,
+  getDocumentDownloadUrl,
   initializeIngestionMetadata,
   runCompanyIntegrityAudit,
   searchCompanies,
@@ -29,12 +32,13 @@ import {
   uploadStatementCsv,
 } from "@/lib/api-client";
 import type { IngestionJob, IntegrityAuditSummary, RejectedRecord } from "@/types/ingestion";
+import type { SourceDocumentListResponse } from "@/types/financials";
 
 export function DataManagementView() {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<"jobs" | "upload_csv" | "upload_report" | "rejected" | "integrity">(
-    "jobs"
-  );
+  const [activeTab, setActiveTab] = useState<
+    "jobs" | "upload_csv" | "upload_report" | "rejected" | "integrity" | "documents"
+  >("jobs");
 
   // CSV Upload state
   const [csvCompanyId, setCsvCompanyId] = useState<number | "">("");
@@ -108,6 +112,11 @@ export function DataManagementView() {
   const { data: scheduledJobs } = useQuery({
     queryKey: ["scheduled_jobs"],
     queryFn: () => fetchScheduledJobs(),
+  });
+
+  const { data: documentsData, refetch: refetchDocuments } = useQuery<SourceDocumentListResponse>({
+    queryKey: ["source_documents"],
+    queryFn: () => fetchSourceDocuments({ page_size: 50 }),
   });
 
   // Mutations
@@ -184,7 +193,8 @@ export function DataManagementView() {
           : `Document uploaded successfully: ${doc.file_name} (SHA-256: ${doc.sha256_hash.slice(0, 12)}...)`,
       });
       setReportFile(null);
-      setActiveTab("jobs");
+      queryClient.invalidateQueries({ queryKey: ["source_documents"] });
+      setActiveTab("documents");
     },
     onError: (err: Error) => {
       setNotification({ type: "error", message: `Report upload failed: ${err.message}` });
@@ -222,9 +232,9 @@ export function DataManagementView() {
           <button
             onClick={() => syncPricesMutation.mutate()}
             disabled={syncPricesMutation.isPending}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-[#00D3F3] text-slate-950 hover:bg-[#00bee0] disabled:opacity-50 transition shadow-sm"
           >
-            <Play className="w-3.5 h-3.5" />
+            <Play className="w-3.5 h-3.5 fill-current" />
             {syncPricesMutation.isPending ? "Syncing..." : "Sync Benchmark Prices"}
           </button>
         </div>
@@ -241,9 +251,9 @@ export function DataManagementView() {
         >
           <div className="flex items-center gap-2">
             {notification.type === "success" ? (
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-[#00E676] shrink-0" />
             ) : (
-              <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" />
+              <AlertCircle className="w-4 h-4 text-red-600 dark:text-[#F43F5E] shrink-0" />
             )}
             <span>{notification.message}</span>
           </div>
@@ -257,12 +267,12 @@ export function DataManagementView() {
       )}
 
       {/* Navigation Tabs */}
-      <div className="flex border-b border-slate-200 dark:border-slate-800">
+      <div className="flex border-b border-slate-200 dark:border-white/[0.08]">
         <button
           onClick={() => setActiveTab("jobs")}
-          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-colors ${
             activeTab === "jobs"
-              ? "border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400"
+              ? "border-[#00D3F3] text-[#00D3F3] dark:text-[#00D3F3] dark:border-[#00D3F3]"
               : "border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
           }`}
         >
@@ -272,9 +282,9 @@ export function DataManagementView() {
 
         <button
           onClick={() => setActiveTab("upload_csv")}
-          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-colors ${
             activeTab === "upload_csv"
-              ? "border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400"
+              ? "border-[#00D3F3] text-[#00D3F3] dark:text-[#00D3F3] dark:border-[#00D3F3]"
               : "border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
           }`}
         >
@@ -284,9 +294,9 @@ export function DataManagementView() {
 
         <button
           onClick={() => setActiveTab("upload_report")}
-          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-colors ${
             activeTab === "upload_report"
-              ? "border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400"
+              ? "border-[#00D3F3] text-[#00D3F3] dark:text-[#00D3F3] dark:border-[#00D3F3]"
               : "border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
           }`}
         >
@@ -296,9 +306,9 @@ export function DataManagementView() {
 
         <button
           onClick={() => setActiveTab("rejected")}
-          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-colors ${
             activeTab === "rejected"
-              ? "border-amber-600 text-amber-600 dark:text-amber-400 dark:border-amber-400"
+              ? "border-amber-500 text-amber-500 dark:text-[#FDC700] dark:border-[#FDC700]"
               : "border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
           }`}
         >
@@ -308,14 +318,26 @@ export function DataManagementView() {
 
         <button
           onClick={() => setActiveTab("integrity")}
-          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-colors ${
             activeTab === "integrity"
-              ? "border-emerald-600 text-emerald-600 dark:text-emerald-400 dark:border-emerald-400"
+              ? "border-emerald-500 text-emerald-600 dark:text-[#00E676] dark:border-[#00E676]"
               : "border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
           }`}
         >
           <ShieldCheck className="w-4 h-4" />
-          Data Integrity & Accounting Audit
+          Data Integrity &amp; Accounting Audit
+        </button>
+
+        <button
+          onClick={() => setActiveTab("documents")}
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-colors ${
+            activeTab === "documents"
+              ? "border-[#00D3F3] text-[#00D3F3] dark:text-[#00D3F3] dark:border-[#00D3F3]"
+              : "border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+          }`}
+        >
+          <FileText className="w-4 h-4" />
+          Uploaded Documents Library ({documentsData?.total ?? 0})
         </button>
       </div>
 
@@ -828,6 +850,131 @@ export function DataManagementView() {
                     </div>
                   ))}
                 </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tab 6: Uploaded Documents Library */}
+      {activeTab === "documents" && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                Uploaded Documents & Annual Reports Repository
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Inspect and download all uploaded filings, annual reports, and statement CSVs with SHA-256 checksums.
+              </p>
+            </div>
+            <button
+              onClick={() => refetchDocuments()}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              Refresh
+            </button>
+          </div>
+
+          {!documentsData || documentsData.items.length === 0 ? (
+            <div className="p-12 text-center border border-dashed border-slate-300 dark:border-slate-700 rounded-xl bg-slate-50/50 dark:bg-slate-900/50">
+              <FileText className="w-10 h-10 text-slate-400 mx-auto mb-3" />
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                No documents uploaded yet
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
+                Upload company annual reports or financial CSVs using the tabs above. Uploaded files will appear here with permanent download links.
+              </p>
+            </div>
+          ) : (
+            <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-900 shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 font-medium">
+                    <tr>
+                      <th className="py-3 px-4">Document Title</th>
+                      <th className="py-3 px-4">Company</th>
+                      <th className="py-3 px-4">Fiscal Period</th>
+                      <th className="py-3 px-4">Type</th>
+                      <th className="py-3 px-4">Size</th>
+                      <th className="py-3 px-4">Upload Date</th>
+                      <th className="py-3 px-4 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {documentsData.items.map((doc) => (
+                      <tr
+                        key={doc.id}
+                        className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
+                      >
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2.5">
+                            <FileText className="w-4 h-4 text-indigo-500 shrink-0" />
+                            <div className="min-w-0">
+                              <span className="font-semibold text-slate-900 dark:text-slate-100 truncate block">
+                                {doc.file_name}
+                              </span>
+                              <span className="font-mono text-[10px] text-slate-400">
+                                SHA: {doc.sha256_hash.slice(0, 16)}...
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          {doc.company_name ? (
+                            <div>
+                              <span className="font-medium text-slate-800 dark:text-slate-200 block truncate">
+                                {doc.company_name}
+                              </span>
+                              {doc.company_symbol && (
+                                <span className="font-mono text-[10px] text-slate-500">
+                                  {doc.company_symbol}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 italic">Global / Unlinked</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 font-mono text-slate-700 dark:text-slate-300">
+                          {doc.fiscal_year ? `FY${doc.fiscal_year}` : "—"}
+                          {doc.fiscal_period ? ` (${doc.fiscal_period})` : ""}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                            {doc.document_type}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 font-mono text-slate-600 dark:text-slate-400">
+                          {doc.file_size_bytes < 1024
+                            ? `${doc.file_size_bytes} B`
+                            : doc.file_size_bytes < 1024 * 1024
+                            ? `${(doc.file_size_bytes / 1024).toFixed(1)} KB`
+                            : `${(doc.file_size_bytes / (1024 * 1024)).toFixed(2)} MB`}
+                        </td>
+                        <td className="py-3 px-4 text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                          {new Date(doc.upload_timestamp).toLocaleDateString("en-IN", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <a
+                            href={getDocumentDownloadUrl(doc.id)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-700 transition"
+                          >
+                            <Download className="w-3 h-3" />
+                            <span>Download</span>
+                          </a>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}

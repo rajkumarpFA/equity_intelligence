@@ -10,6 +10,7 @@ from app.models.ingestion import (
     ValidationResult,
 )
 from app.models.market_data import CorporateAction, PriceHistory, ShareholdingHistory
+from app.models.screening import SavedScreen
 
 __all__ = [
     "Company",
@@ -23,6 +24,7 @@ __all__ = [
     "IngestionJob",
     "PriceHistory",
     "RejectedRecord",
+    "SavedScreen",
     "Sector",
     "Security",
     "ShareholdingHistory",
