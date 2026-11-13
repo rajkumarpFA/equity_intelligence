@@ -1,6 +1,6 @@
 """Pydantic schemas for company, securities, and taxonomy."""
 
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -75,6 +75,10 @@ class CompanyRead(CompanyBase):
     sector: SectorRead | None = None
     industry: IndustryRead | None = None
     securities: list[SecurityRead] = []
+    current_price: Decimal | None = None
+    price_change: Decimal | None = None
+    price_change_pct: Decimal | None = None
+    price_date: date | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -94,6 +98,10 @@ class CompanySearchItem(BaseModel):
     status: str
     primary_symbol: str | None = None
     exchange_listings: list[str] = []
+    current_price: Decimal | None = None
+    price_change: Decimal | None = None
+    price_change_pct: Decimal | None = None
+    price_date: date | None = None
     securities: list[SecurityRead] = []
 
     model_config = ConfigDict(from_attributes=True)

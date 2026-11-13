@@ -10,6 +10,7 @@ from app.api.v1.router import api_router
 from app.core.config import get_settings
 from app.core.logging import configure_logging
 from app.db.session import engine
+from app.ingestion.scheduler import shutdown_scheduler, start_scheduler
 
 settings = get_settings()
 configure_logging(settings.log_level)
@@ -21,14 +22,17 @@ async def lifespan(app: FastAPI):
     """Handle startup initialization and graceful shutdown."""
     logger.info("Starting %s (%s)", settings.app_name, settings.app_env)
     try:
-        settings.storage_dir.mkdir(parents=True, exist_ok=True)
-        logger.info("Storage directory verified: %s", settings.storage_dir)
+        storage_path = settings.effective_storage_dir
+        logger.info("Storage directory verified: %s", storage_path)
     except OSError as exc:
         logger.warning("Could not verify storage directory %s: %s", settings.storage_dir, exc)
+
+    start_scheduler()
 
     yield
 
     logger.info("Shutting down %s gracefully...", settings.app_name)
+    shutdown_scheduler()
     engine.dispose()
 
 

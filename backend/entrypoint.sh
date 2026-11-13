@@ -30,4 +30,8 @@ echo "==> Running Alembic migrations..."
 alembic upgrade head
 
 echo "==> Starting FastAPI server..."
-exec uvicorn app.main:app --host 0.0.0.0 --port "${BACKEND_PORT:-8000}"
+if [ "${APP_ENV:-development}" = "development" ]; then
+    exec uvicorn app.main:app --host 0.0.0.0 --port "${BACKEND_PORT:-8000}" --reload --reload-dir /app/app
+else
+    exec uvicorn app.main:app --host 0.0.0.0 --port "${BACKEND_PORT:-8000}"
+fi

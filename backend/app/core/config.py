@@ -32,6 +32,8 @@ class Settings(BaseSettings):
     storage_dir: Path = Path("/app/storage")
     max_upload_size_mb: int = 50
 
+    default_price_provider: str = "yahoo_finance"  # 'yahoo_finance' or 'upstox'
+
     upstox_access_token: SecretStr | None = None
     upstox_analytics_token: SecretStr | None = None
     upstox_api_base_url: str = "https://api.upstox.com/v2"
@@ -46,6 +48,20 @@ class Settings(BaseSettings):
     def cors_origin_list(self) -> list[str]:
         """Return normalized list of allowed CORS origins."""
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+
+    @property
+    def effective_storage_dir(self) -> Path:
+        """Return writable storage directory with local directory fallback when running outside Docker."""
+        try:
+            self.storage_dir.mkdir(parents=True, exist_ok=True)
+            test_file = self.storage_dir / ".write_test"
+            test_file.touch()
+            test_file.unlink()
+            return self.storage_dir
+        except (PermissionError, OSError):
+            fallback = Path("./storage")
+            fallback.mkdir(parents=True, exist_ok=True)
+            return fallback
 
     @property
     def upstox_configured(self) -> bool:

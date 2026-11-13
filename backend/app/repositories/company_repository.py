@@ -1,6 +1,5 @@
 """Company repository handling queries, search, deduplication, and persistence."""
 
-
 from sqlalchemy import distinct, func, or_, select
 from sqlalchemy.orm import Session, joinedload
 
@@ -14,9 +13,13 @@ class CompanyRepository:
 
     def get_or_create_exchange(self, code: str, name: str | None = None) -> Exchange:
         code_upper = code.strip().upper()
-        exchange = self.db.execute(select(Exchange).where(Exchange.code == code_upper)).scalar_one_or_none()
+        exchange = self.db.execute(
+            select(Exchange).where(Exchange.code == code_upper)
+        ).scalar_one_or_none()
         if not exchange:
-            exchange_name = name or ("National Stock Exchange" if code_upper == "NSE" else "Bombay Stock Exchange")
+            exchange_name = name or (
+                "National Stock Exchange" if code_upper == "NSE" else "Bombay Stock Exchange"
+            )
             exchange = Exchange(code=code_upper, name=exchange_name)
             self.db.add(exchange)
             self.db.flush()
@@ -24,7 +27,9 @@ class CompanyRepository:
 
     def get_or_create_sector(self, name: str) -> Sector:
         name_clean = name.strip()
-        sector = self.db.execute(select(Sector).where(func.lower(Sector.name) == name_clean.lower())).scalar_one_or_none()
+        sector = self.db.execute(
+            select(Sector).where(func.lower(Sector.name) == name_clean.lower())
+        ).scalar_one_or_none()
         if not sector:
             sector = Sector(name=name_clean)
             self.db.add(sector)
@@ -56,6 +61,8 @@ class CompanyRepository:
             )
         )
         return self.db.execute(stmt).unique().scalar_one_or_none()
+
+    get_by_id = get_company_by_id
 
     def get_company_by_isin(self, isin: str) -> Company | None:
         isin_clean = isin.strip().upper()
@@ -184,7 +191,7 @@ class CompanyRepository:
         page_size: int = 20,
     ) -> tuple[int, list[Company]]:
         """Search companies matching query text across company name, ISIN, CIN, and exchange trading symbols."""
-        base_stmt = select(distinct(Company.id)).select_from(Company)
+        base_stmt = select(Company.id, Company.name).select_from(Company)
 
         joins_needed = []
         conditions = []
@@ -222,16 +229,19 @@ class CompanyRepository:
             base_stmt = base_stmt.where(*conditions)
 
         # Count total
-        count_stmt = select(func.count()).select_from(base_stmt.subquery())
+        count_stmt = select(func.count(distinct(base_stmt.subquery().c.id)))
         total = self.db.execute(count_stmt).scalar() or 0
 
         if total == 0:
             return 0, []
 
-        # Paginate IDs
+        # Paginate IDs with distinct (id, name)
         offset = (page - 1) * page_size
-        paginated_id_stmt = base_stmt.order_by(Company.name.asc()).offset(offset).limit(page_size)
-        company_ids = self.db.execute(paginated_id_stmt).scalars().all()
+        paginated_id_stmt = (
+            base_stmt.distinct().order_by(Company.name.asc()).offset(offset).limit(page_size)
+        )
+        rows = self.db.execute(paginated_id_stmt).all()
+        company_ids = [r[0] for r in rows]
 
         if not company_ids:
             return total, []
@@ -251,9 +261,5 @@ class CompanyRepository:
         return total, list(companies)
 
     def get_all_sectors(self) -> list[Sector]:
-        stmt = (
-            select(Sector)
-            .options(joinedload(Sector.industries))
-            .order_by(Sector.name.asc())
-        )
+        stmt = select(Sector).options(joinedload(Sector.industries)).order_by(Sector.name.asc())
         return list(self.db.execute(stmt).unique().scalars().all())

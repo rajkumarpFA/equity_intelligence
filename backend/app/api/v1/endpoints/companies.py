@@ -1,6 +1,5 @@
 """Company discovery and master data API endpoints."""
 
-
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
@@ -24,6 +23,7 @@ def search_companies(
     exchange: str | None = Query(None, description="Filter by exchange code (e.g. NSE or BSE)"),
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(20, ge=1, le=100, description="Page size"),
+    refresh: bool = Query(False, description="Force bypass price cache and fetch fresh quotes"),
     db: Session = Depends(get_db),
 ) -> CompanySearchResponse:
     """Search and browse canonical companies across NSE and BSE listings."""
@@ -35,6 +35,7 @@ def search_companies(
         exchange_code=exchange,
         page=page,
         page_size=page_size,
+        refresh=refresh,
     )
 
 
@@ -53,7 +54,9 @@ def seed_benchmark_companies(db: Session = Depends(get_db)):
     return {
         "status": "success",
         "seeded_companies_count": count,
-        "message": f"Successfully seeded {count} benchmark companies." if count > 0 else "Database already populated.",
+        "message": f"Successfully seeded {count} benchmark companies."
+        if count > 0
+        else "Database already populated.",
     }
 
 
@@ -71,10 +74,14 @@ def get_company_by_isin(isin: str, db: Session = Depends(get_db)) -> CompanyRead
 
 
 @router.get("/{company_id}", response_model=CompanyRead)
-def get_company_by_id(company_id: int, db: Session = Depends(get_db)) -> CompanyRead:
+def get_company_by_id(
+    company_id: int,
+    refresh: bool = Query(False, description="Force bypass price cache and fetch fresh quotes"),
+    db: Session = Depends(get_db),
+) -> CompanyRead:
     """Retrieve detailed canonical company record with exchange listings and sector info."""
     service = CompanyService(db)
-    company = service.get_company_by_id(company_id)
+    company = service.get_company_by_id(company_id, refresh=refresh)
     if not company:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -88,3 +95,20 @@ def upsert_company(data: CompanyCreate, db: Session = Depends(get_db)) -> Compan
     """Upsert canonical company record and associate its exchange securities."""
     service = CompanyService(db)
     return service.upsert_company(data)
+
+
+@router.post("/lookup-and-add", response_model=CompanyRead, status_code=status.HTTP_201_CREATED)
+def lookup_and_add_company(
+    symbol: str = Query(..., description="Trading symbol to search and import (e.g. INFY, ITC, SBIN)"),
+    exchange: str = Query("NSE", description="Exchange code (NSE or BSE)"),
+    db: Session = Depends(get_db),
+) -> CompanyRead:
+    """On-demand lookup and addition of any NSE/BSE listed stock into local PostgreSQL."""
+    service = CompanyService(db)
+    try:
+        return service.import_company_by_symbol(symbol=symbol, exchange=exchange)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc

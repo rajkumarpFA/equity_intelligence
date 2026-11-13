@@ -16,12 +16,14 @@ from app.schemas.company import (
     SecurityCreate,
     SecurityRead,
 )
+from app.services.price_service import PriceService
 
 
 class CompanyService:
     def __init__(self, db: Session):
         self.db = db
         self.repo = CompanyRepository(db)
+        self.price_service = PriceService()
 
     def _format_security_read(self, security: Security) -> SecurityRead:
         return SecurityRead(
@@ -38,14 +40,21 @@ class CompanyService:
             market_cap_category=security.market_cap_category,
         )
 
-    def _format_company_read(self, company: Company) -> CompanyRead:
-        sector_dto = (
-            SectorRead.model_validate(company.sector) if company.sector else None
-        )
-        industry_dto = (
-            IndustryRead.model_validate(company.industry) if company.industry else None
-        )
+    def _format_company_read(self, company: Company, refresh: bool = False) -> CompanyRead:
+        sector_dto = SectorRead.model_validate(company.sector) if company.sector else None
+        industry_dto = IndustryRead.model_validate(company.industry) if company.industry else None
         securities_dto = [self._format_security_read(s) for s in company.securities]
+
+        # Fetch latest price for primary/first security
+        primary_sec = next((s for s in company.securities if s.is_primary), None)
+        if not primary_sec and company.securities:
+            primary_sec = company.securities[0]
+
+        quote = None
+        if primary_sec:
+            quote = self.price_service.get_latest_quote(
+                primary_sec.symbol, primary_sec.exchange.code, force_refresh=refresh
+            )
 
         return CompanyRead(
             id=company.id,
@@ -62,12 +71,16 @@ class CompanyService:
             description=company.description,
             website=company.website,
             status=company.status,
+            current_price=quote["current_price"] if quote else None,
+            price_change=quote["price_change"] if quote else None,
+            price_change_pct=quote["price_change_pct"] if quote else None,
+            price_date=quote["price_date"] if quote else None,
             securities=securities_dto,
             created_at=company.created_at,
             updated_at=company.updated_at,
         )
 
-    def _format_search_item(self, company: Company) -> CompanySearchItem:
+    def _format_search_item(self, company: Company, quote: dict | None = None) -> CompanySearchItem:
         securities_dto = [self._format_security_read(s) for s in company.securities]
         primary_sec = next((s for s in company.securities if s.is_primary), None)
         if not primary_sec and company.securities:
@@ -86,6 +99,10 @@ class CompanyService:
             status=company.status,
             primary_symbol=primary_sec.symbol if primary_sec else None,
             exchange_listings=exchange_listings,
+            current_price=quote["current_price"] if quote else None,
+            price_change=quote["price_change"] if quote else None,
+            price_change_pct=quote["price_change_pct"] if quote else None,
+            price_date=quote["price_date"] if quote else None,
             securities=securities_dto,
         )
 
@@ -97,6 +114,7 @@ class CompanyService:
         exchange_code: str | None = None,
         page: int = 1,
         page_size: int = 20,
+        refresh: bool = False,
     ) -> CompanySearchResponse:
         total, companies = self.repo.search_companies(
             query=query,
@@ -107,7 +125,30 @@ class CompanyService:
             page_size=page_size,
         )
         total_pages = math.ceil(total / page_size) if total > 0 else 1
-        items = [self._format_search_item(c) for c in companies]
+
+        # Fetch batch quotes for visible companies
+        symbols = []
+        for c in companies:
+            primary_sec = next((s for s in c.securities if s.is_primary), None)
+            if not primary_sec and c.securities:
+                primary_sec = c.securities[0]
+            if primary_sec:
+                symbols.append(primary_sec.symbol)
+
+        # Read only cached quotes during search/browsing; never trigger batch external network calls
+        quotes = (
+            self.price_service.get_cached_quotes_for_symbols(symbols)
+            if symbols
+            else {}
+        )
+
+        items = []
+        for c in companies:
+            primary_sec = next((s for s in c.securities if s.is_primary), None)
+            if not primary_sec and c.securities:
+                primary_sec = c.securities[0]
+            q = quotes.get(primary_sec.symbol.upper()) if primary_sec else None
+            items.append(self._format_search_item(c, q))
 
         return CompanySearchResponse(
             total=total,
@@ -117,9 +158,9 @@ class CompanyService:
             items=items,
         )
 
-    def get_company_by_id(self, company_id: int) -> CompanyRead | None:
+    def get_company_by_id(self, company_id: int, refresh: bool = False) -> CompanyRead | None:
         company = self.repo.get_company_by_id(company_id)
-        return self._format_company_read(company) if company else None
+        return self._format_company_read(company, refresh=refresh) if company else None
 
     def get_company_by_isin(self, isin: str) -> CompanyRead | None:
         company = self.repo.get_company_by_isin(isin)
@@ -127,6 +168,95 @@ class CompanyService:
 
     def upsert_company(self, data: CompanyCreate) -> CompanyRead:
         company = self.repo.upsert_canonical_company(data)
+        return self._format_company_read(company)
+
+    def import_company_by_symbol(self, symbol: str, exchange: str = "NSE") -> CompanyRead:
+        """On-demand lookup and addition of any NSE/BSE listed stock into local PostgreSQL."""
+        clean_symbol = symbol.strip().upper()
+        clean_exchange = exchange.strip().upper()
+
+        # 1. Check if already exists in DB
+        _total, existing_list = self.repo.search_companies(query=clean_symbol, page=1, page_size=10)
+        for c in existing_list:
+            for s in c.securities:
+                if s.symbol.upper() == clean_symbol and s.exchange.code.upper() == clean_exchange:
+                    return self._format_company_read(c)
+
+        # 2. Look up in Upstox instrument master (open public CDN)
+        import asyncio
+
+        from app.providers.upstox.adapter import UpstoxProvider
+
+        upstox = UpstoxProvider()
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                import concurrent.futures
+
+                with concurrent.futures.ThreadPoolExecutor() as pool:
+                    instruments = pool.submit(
+                        asyncio.run, upstox.get_instrument_master(clean_exchange)
+                    ).result()
+            else:
+                instruments = loop.run_until_complete(upstox.get_instrument_master(clean_exchange))
+        except (RuntimeError, OSError):
+            instruments = asyncio.run(upstox.get_instrument_master(clean_exchange))
+
+        found = next((i for i in instruments if i.symbol.upper() == clean_symbol), None)
+
+        if found:
+            name = found.name
+            isin = found.isin
+            series = found.series or "EQ"
+            inst_key = found.provider_instrument_key
+        else:
+            # Fallback to Yahoo Finance metadata
+            import httpx
+
+            ticker = f"{clean_symbol}.NS" if clean_exchange == "NSE" else f"{clean_symbol}.BO"
+            try:
+                r = httpx.get(
+                    f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}?interval=1d&range=5d",
+                    headers={"User-Agent": "Mozilla/5.0"},
+                    timeout=8.0,
+                )
+                if r.status_code == 200:
+                    meta = r.json().get("chart", {}).get("result", [{}])[0].get("meta", {})
+                    name = meta.get("shortName") or meta.get("longName") or clean_symbol
+                    isin = f"IN{clean_symbol[:9]}01"
+                    series = "EQ"
+                    inst_key = f"{clean_exchange}_EQ|{isin}"
+                else:
+                    raise ValueError(f"Stock symbol '{clean_symbol}' not found on {clean_exchange}")
+            except Exception as exc:
+                raise ValueError(
+                    f"Could not resolve stock '{clean_symbol}' on {clean_exchange}: {exc}"
+                ) from exc
+
+        # 3. Create canonical Company and Security mapping
+        company_create = CompanyCreate(
+            name=name,
+            legal_name=name,
+            isin=isin,
+            is_financial_sector=any(
+                w in name.upper()
+                for w in ["BANK", "FINANCIAL", "FINANCE", "HOUSING", "INSURANCE"]
+            ),
+            securities=[
+                SecurityCreate(
+                    exchange_code=clean_exchange,
+                    symbol=clean_symbol,
+                    is_primary=True,
+                    series=series,
+                    provider_instrument_key=inst_key,
+                )
+            ],
+        )
+        company = self.repo.upsert_canonical_company(company_create)
+
+        # 4. Fetch initial price snapshot
+        self.price_service.get_latest_quote(clean_symbol, clean_exchange, force_refresh=True)
+
         return self._format_company_read(company)
 
     def list_sectors(self) -> list[SectorRead]:
