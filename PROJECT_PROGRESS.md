@@ -412,5 +412,45 @@ This document tracks all tasks, architectural decisions, completed deliverables,
 ---
 
 ## Phase 11: Competitor Analysis
+- **Status**: Completed & Verified
+- **Scope**: Peer discovery API, multi-company side-by-side comparison matrix across Valuation, Growth, Profitability, Solvency, Banking, Operating Efficiency, Quality Scores, and Technical Momentum, strict Banking Sector Isolation, best-in-cohort leader highlights and cohort average calculations, 5-Pillar Relative Scorecard, RFC 4180 CSV export, interactive `/compare` frontend view with sticky matrix table and company search pills, and "Compare with Peers" quick navigation from `/companies/[id]`.
+- **Tasks Done**:
+  - **Pydantic Schemas (`backend/app/schemas/comparison.py`)**:
+    - Created `PeerSummaryItem`, `CompanyPeersResponse`, `ComparisonCompanyHeader`, `ComparisonMetricValue`, `ComparisonMetricRow`, `RadarDimensionScore`, `CompanyComparisonRequest`, `CompanyComparisonResponse`.
+  - **Comparison Engine & Service (`backend/app/services/comparison_service.py`)**:
+    - `get_company_peers(company_id)`: Discovers direct industry and sector peer companies, prioritizing matching industry before broader sector peers, sorted by market capitalization.
+    - `compare_companies(request)`: Assembles comprehensive side-by-side comparison matrix across 8 financial categories (Valuation & Market, Growth Trajectory, Profitability & Returns, Solvency & Capital Structure, Banking & Regulatory, Operating Efficiency, Financial Health & Quality, Technical Momentum).
+    - **Banking Sector Isolation**: Automatically isolates commercial banks and NBFCs from industrial solvency ratios (D/E, Interest Coverage, Current Ratio, Cash Conversion Cycle) with `bypass_reason = "BANKING_BYPASS"`, and provides specialized banking regulatory metrics (NIM %, CASA %, Gross NPA %, Net NPA %, Capital Adequacy %, Cost-to-Income %) for financial institutions while assigning `bypass_reason = "NON_FINANCIAL_BYPASS"` for non-financial companies.
+    - **Best-in-Cohort Leader Tagging & Cohort Averages**: Dynamically evaluates the cohort leader and laggard based on `higher_is_better` direction, while computing non-null cohort averages for every metric.
+    - **5-Pillar Relative Scorecard**: Computes relative 0-100 normalized scores across 5 core fundamental dimensions: Growth Trajectory, Profitability & Returns, Financial Health, Operating Efficiency, and Valuation Attractiveness.
+    - `export_comparison_csv(request)`: Generates RFC 4180 compliant CSV stream containing all company headers, cohort averages, metric categories, values, units, and sector bypass indicators.
+  - **API Endpoints (`backend/app/api/v1/endpoints/companies.py`)**:
+    - `GET /api/v1/companies/{id}/peers`: Returns peer list for a given company.
+    - `POST /api/v1/companies/compare`: Generates full side-by-side matrix for selected company IDs.
+    - `GET /api/v1/companies/compare?ids=1,2,3`: GET query string variant for browser bookmarking and sharing.
+    - `POST /api/v1/companies/compare/export-csv`: Streams downloadable CSV file.
+    - Positioned routes before `/{company_id}` to prevent path parameter conflict.
+  - **Frontend UI & Components (`frontend/src/`)**:
+    - `types/comparison.ts`: TypeScript definitions matching backend comparison schemas.
+    - `lib/api-client.ts`: Added `fetchCompanyPeers()`, `compareCompanies()`, and `exportComparisonCsv()`.
+    - `components/comparison/CompareView.tsx`:
+      - **Selected Cohort Bar**: Company pills with remove triggers, dual-exchange badges, live stock price, and autocomplete company adder (up to 8 peers).
+      - **One-Click Sector Peer Adder**: Automatically detects primary company's sector and offers one-click peer group population.
+      - **Standalone / Consolidated Toggle**: Instant switching of underlying reporting basis.
+      - **5-Pillar Relative Scorecard**: Visual bar progress cards (0-100) comparing Growth, Profitability, Health, Efficiency, and Valuation.
+      - **Category Filter Tabs**: Quick filtering across All Categories, Valuation, Growth, Profitability, Solvency, Banking, Efficiency, Quality, and Momentum.
+      - **Sticky Comparison Matrix Table**: Sticky metric specification and peer average columns, company headers with live prices and sector badges, best-in-cohort green highlight tags, and strict `<MissingValue reason="..." />` handling for bypassed rows.
+      - **Export CSV Button**: Native browser download of comparison data.
+    - `app/compare/page.tsx`: Replaced placeholder with full `<CompareView>` wrapped in `<Suspense>`.
+    - `app/companies/[id]/page.tsx`: Added "Compare with Peers" quick action button in header linking directly to `/compare?ids={id}`.
+  - **Test Gate**:
+    - Backend: 94/94 Pytest tests passed (`test_comparison.py` with 5 integration tests covering peer discovery, matrix generation, leader attribution, banking isolation, CSV export, and API endpoints; all 89 existing tests passing).
+    - Code Quality: `uv run ruff check app tests` passing with 0 errors.
+    - Frontend: 32/32 Vitest tests passed across 10 test suites (`compare.test.tsx` with 6 unit/integration tests; all 26 existing tests passing).
+    - Production Build: Next.js production build succeeded with all 13 routes statically/dynamically compiled (0 errors).
+
+---
+
+## Phase 12: Valuation Workbench
 - **Status**: Ready to Begin
-- **Scope**: Peer comparison API and `/compare` UI allowing multi-company selection, sector peer groups, relative metric comparison (Revenue, Growth, Margin, ROE, ROCE, D/E, PE, PB, EV/EBITDA), peer benchmarking spider/radar summary, and export.
+- **Scope**: Multi-model valuation workbench including Discounted Cash Flow (DCF with terminal growth & exit multiple), Historical Multiple Comparison (P/E, P/B, EV/EBITDA percentile bands), Dividend Discount Model (DDM / Gordon Growth for dividend payers), Graham Formula intrinsic value, reverse DCF sensitivity matrix (implied growth rate from current price), custom scenario builder, and interactive `/valuation` page.

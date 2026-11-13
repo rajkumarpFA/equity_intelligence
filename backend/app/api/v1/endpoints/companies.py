@@ -1,6 +1,7 @@
 """Company discovery and master data API endpoints."""
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -14,6 +15,11 @@ from app.schemas.company import (
     CompanySearchResponse,
     SectorRead,
 )
+from app.schemas.comparison import (
+    CompanyComparisonRequest,
+    CompanyComparisonResponse,
+    CompanyPeersResponse,
+)
 from app.schemas.financial_statements import (
     AvailablePeriodsResponse,
     CorporateActionDetail,
@@ -23,6 +29,7 @@ from app.schemas.financial_statements import (
 from app.schemas.technicals import CompanyTechnicalsResponse
 from app.services.analysis_service import AnalysisService
 from app.services.company_service import CompanyService
+from app.services.comparison_service import ComparisonService
 from app.services.financial_statement_service import FinancialStatementService
 from app.services.technicals_service import TechnicalsService
 
@@ -85,6 +92,76 @@ def get_company_by_isin(isin: str, db: Session = Depends(get_db)) -> CompanyRead
             detail=f"Company with ISIN '{isin}' not found",
         )
     return company
+
+
+@router.post(
+    "/compare",
+    response_model=CompanyComparisonResponse,
+    summary="Compare multiple companies side-by-side across fundamental and valuation metrics",
+)
+def compare_companies_post(
+    request: CompanyComparisonRequest,
+    db: Session = Depends(get_db),
+) -> CompanyComparisonResponse:
+    """Generate a multi-metric comparative matrix for selected companies."""
+    service = ComparisonService(db)
+    try:
+        return service.compare_companies(
+            company_ids=request.company_ids,
+            reporting_basis=request.reporting_basis,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+
+@router.get(
+    "/compare",
+    response_model=CompanyComparisonResponse,
+    summary="Compare multiple companies via comma-separated query parameters",
+)
+def compare_companies_get(
+    ids: str = Query(..., description="Comma-separated company IDs (e.g. 1,2,3)"),
+    reporting_basis: str = Query("CONSOLIDATED", description="STANDALONE or CONSOLIDATED"),
+    db: Session = Depends(get_db),
+) -> CompanyComparisonResponse:
+    """GET shortcut to generate a multi-company comparative matrix."""
+    try:
+        company_ids = [int(x.strip()) for x in ids.split(",") if x.strip()]
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Query parameter 'ids' must be a comma-separated list of integers.",
+        ) from exc
+
+    service = ComparisonService(db)
+    try:
+        return service.compare_companies(company_ids=company_ids, reporting_basis=reporting_basis)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+
+@router.post(
+    "/compare/export-csv",
+    summary="Export company comparison matrix as RFC 4180 CSV",
+)
+def export_comparison_csv(
+    request: CompanyComparisonRequest,
+    db: Session = Depends(get_db),
+) -> Response:
+    """Download clean, formatted CSV matrix of all compared metrics across selected companies."""
+    service = ComparisonService(db)
+    try:
+        csv_content = service.export_comparison_csv(
+            company_ids=request.company_ids,
+            reporting_basis=request.reporting_basis,
+        )
+        return Response(
+            content=csv_content,
+            media_type="text/csv",
+            headers={"Content-Disposition": 'attachment; filename="competitor_comparison.csv"'},
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
 
 @router.get("/{company_id}", response_model=CompanyRead)
@@ -274,5 +351,23 @@ def get_company_technicals(
         )
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+
+@router.get(
+    "/{company_id}/peers",
+    response_model=CompanyPeersResponse,
+    summary="Discover industry and sector peer companies for competitive benchmarking",
+)
+def get_company_peers(
+    company_id: int,
+    db: Session = Depends(get_db),
+) -> CompanyPeersResponse:
+    """Discover companies within the same sector or industry for side-by-side comparison."""
+    service = ComparisonService(db)
+    try:
+        return service.get_company_peers(company_id=company_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
 
 

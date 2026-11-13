@@ -23,6 +23,7 @@ import {
   FileText,
   Calculator,
   ShieldCheck,
+  Users,
 } from "lucide-react";
 import { Header } from "@/components/common/Header";
 import { fetchCompanyById } from "@/lib/api-client";
@@ -269,6 +270,14 @@ export default function CompanyDetailPage() {
                       {company.industry.name}
                     </span>
                   )}
+                  <Link
+                    href={`/compare?companies=${company.id}`}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--accent)]/30 bg-[var(--accent)]/10 px-3 py-1 text-xs font-bold text-[var(--accent)] hover:bg-[var(--accent)]/20 transition shadow-sm ml-auto"
+                    title={`Open Competitor Analysis for ${company.name}`}
+                  >
+                    <Users className="h-3.5 w-3.5" />
+                    <span>Compare with Peers</span>
+                  </Link>
                   {company.is_financial_sector && (
                     <span className="inline-flex items-center gap-1 rounded-lg border border-[var(--warn)]/20 bg-[var(--warn)]/10 px-2.5 py-1 text-xs font-bold text-[var(--warn)]">
                       <ShieldAlert className="h-3 w-3 text-[var(--warn)]" />

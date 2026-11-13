@@ -15,6 +15,11 @@ import type {
   ScreenResponse,
 } from "@/types/screener";
 import type { CompanyTechnicalsResponse } from "@/types/technicals";
+import type {
+  CompanyComparisonRequest,
+  CompanyComparisonResponse,
+  CompanyPeersResponse,
+} from "@/types/comparison";
 import type { HealthResponse } from "@/types/health";
 import type {
   CompanyRead,
@@ -410,6 +415,39 @@ export async function fetchCompanyTechnicals(
     `/companies/${companyId}/technicals?${params.toString()}`
   );
 }
+
+// ---------------------------------------------------------
+// Competitor Analysis & Peer Comparison APIs (Phase 11)
+// ---------------------------------------------------------
+
+export async function fetchCompanyPeers(companyId: number): Promise<CompanyPeersResponse> {
+  return apiFetch<CompanyPeersResponse>(`/companies/${companyId}/peers`);
+}
+
+export async function compareCompanies(
+  request: CompanyComparisonRequest
+): Promise<CompanyComparisonResponse> {
+  return apiFetch<CompanyComparisonResponse>("/companies/compare", {
+    method: "POST",
+    body: JSON.stringify(request),
+  });
+}
+
+export async function exportComparisonCsv(
+  request: CompanyComparisonRequest
+): Promise<Blob> {
+  const url = `${API_BASE_URL}/companies/compare/export-csv`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) {
+    throw new ApiError(`Comparison CSV Export failed (${response.status})`, response.status);
+  }
+  return response.blob();
+}
+
 
 
 
