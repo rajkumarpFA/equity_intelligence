@@ -1,9 +1,9 @@
 """Technical Analysis service orchestrating price history queries, technical indicator calculation, and summaries."""
 
 import logging
+import math
 from datetime import date, timedelta
 from decimal import Decimal
-import math
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -352,7 +352,7 @@ class TechnicalsService:
             candles_to_insert[-1].high = Decimal(str(round(base_price * 1.01, 2)))
             candles_to_insert[-1].low = Decimal(str(round(base_price * 0.99, 2)))
 
-        self.ingestion_repo.upsert_daily_candles(security.id, candles_to_insert)
+        self.ingestion_repo.upsert_price_candles(security.id, candles_to_insert)
         self.db.commit()
 
         # Re-query saved candles

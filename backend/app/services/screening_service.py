@@ -2,8 +2,7 @@
 
 import csv
 import io
-from datetime import datetime, timezone
-from decimal import Decimal
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import select
@@ -13,7 +12,6 @@ from app.models.company import Company
 from app.models.screening import SavedScreen
 from app.screening.compiler import evaluate_expression, resolve_field_name
 from app.screening.models import (
-    FilterExpression,
     SavedScreenCreate,
     SavedScreenRead,
     SavedScreenUpdate,
@@ -79,7 +77,7 @@ class ScreeningService:
             banking = ratios_resp.banking
             latest_label = ratios_resp.latest_period_label
             fiscal_year = int(latest_label.replace("FY", "")) if latest_label.startswith("FY") else None
-        except Exception:
+        except (ValueError, KeyError, AttributeError):
             growth = None
             prof = None
             solv = None
@@ -91,7 +89,7 @@ class ScreeningService:
             scores_resp = self.analysis_svc.get_company_quality_scores(company.id, basis)
             altman = scores_resp.altman_z
             piot = scores_resp.piotroski_f
-        except Exception:
+        except (ValueError, KeyError, AttributeError):
             altman = None
             piot = None
 
@@ -359,7 +357,7 @@ class ScreeningService:
 
     def get_preset_screens(self) -> list[SavedScreenRead]:
         """Return the pre-configured institutional screens."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         return [
             SavedScreenRead(
                 id=p["id"],
@@ -413,7 +411,7 @@ class ScreeningService:
         # Check presets fallback
         for p in PRESET_SCREENS:
             if p["id"] == screen_id:
-                now = datetime.now(timezone.utc)
+                now = datetime.now(UTC)
                 return SavedScreenRead(
                     id=p["id"],
                     name=p["name"],

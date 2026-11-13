@@ -14,6 +14,7 @@ import type {
   ScreenRequest,
   ScreenResponse,
 } from "@/types/screener";
+import type { CompanyTechnicalsResponse } from "@/types/technicals";
 import type { HealthResponse } from "@/types/health";
 import type {
   CompanyRead,
@@ -391,5 +392,24 @@ export async function deleteSavedScreen(screenId: number): Promise<{ status: str
     method: "DELETE",
   });
 }
+
+// ---------------------------------------------------------
+// Technical Analysis & EOD Charts APIs (Phase 10)
+// ---------------------------------------------------------
+
+export async function fetchCompanyTechnicals(
+  companyId: number,
+  timeframe: string = "1Y",
+  securityId?: number
+): Promise<CompanyTechnicalsResponse> {
+  const params = new URLSearchParams({ timeframe });
+  if (securityId) {
+    params.set("security_id", securityId.toString());
+  }
+  return apiFetch<CompanyTechnicalsResponse>(
+    `/companies/${companyId}/technicals?${params.toString()}`
+  );
+}
+
 
 

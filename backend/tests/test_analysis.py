@@ -1,38 +1,7 @@
 """Tests for Phase 8: Financial Analysis Engine, DuPont decomposition, and Quality Scores."""
 
-from decimal import Decimal
-import pytest
 from fastapi.testclient import TestClient
 
-from app.calculations.growth import calculate_cagr, calculate_yoy_growth
-from app.calculations.profitability import (
-    dupont_analysis,
-    ebitda_margin,
-    net_profit_margin,
-    operating_margin,
-    return_on_assets,
-    return_on_capital_employed,
-    return_on_equity,
-)
-from app.calculations.solvency import (
-    current_ratio,
-    debt_to_assets,
-    debt_to_equity,
-    interest_coverage,
-    quick_ratio,
-)
-from app.calculations.efficiency import (
-    asset_turnover,
-    cash_conversion_cycle,
-    creditor_days,
-    debtor_days,
-    inventory_days,
-    working_capital_days,
-)
-from app.calculations.scores import (
-    calculate_altman_z_score,
-    calculate_piotroski_f_score,
-)
 from app.calculations.banking import (
     capital_adequacy_ratio,
     casa_ratio,
@@ -40,11 +9,34 @@ from app.calculations.banking import (
     net_interest_margin,
     npa_pct,
 )
-from app.models.company import Company, Exchange, Security
-from app.models.financials import FinancialMetric, FinancialStatement, FinancialFact
+from app.calculations.efficiency import (
+    cash_conversion_cycle,
+    creditor_days,
+    debtor_days,
+    inventory_days,
+)
+from app.calculations.growth import calculate_cagr, calculate_yoy_growth
+from app.calculations.profitability import (
+    dupont_analysis,
+    ebitda_margin,
+    net_profit_margin,
+    operating_margin,
+    return_on_capital_employed,
+    return_on_equity,
+)
+from app.calculations.scores import (
+    calculate_altman_z_score,
+    calculate_piotroski_f_score,
+)
+from app.calculations.solvency import (
+    current_ratio,
+    debt_to_equity,
+    interest_coverage,
+    quick_ratio,
+)
+from app.models.company import Company
 from app.services.analysis_service import AnalysisService
 from app.services.financial_statement_service import FinancialStatementService
-
 
 # -------------------------------------------------------------
 # 1. Mathematical Unit Tests (Deterministic Calculation Engine)

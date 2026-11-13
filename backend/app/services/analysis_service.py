@@ -132,7 +132,7 @@ class AnalysisService:
             )
 
         # Collect unique periods sorted chronologically
-        unique_periods = sorted(list({s.period_end for s in statements}))
+        unique_periods = sorted({s.period_end for s in statements})
         stmt_to_period = {s.id: s.period_end for s in statements}
         period_meta: dict[Any, FinancialStatement] = {}
         for s in statements:
@@ -255,7 +255,7 @@ class AnalysisService:
             )
 
         # Group statements by unique period_end
-        unique_periods = sorted(list({s.period_end for s in statements}))
+        unique_periods = sorted({s.period_end for s in statements})
         stmt_to_period = {s.id: s.period_end for s in statements}
         period_meta: dict[Any, FinancialStatement] = {}
         for s in statements:
@@ -300,20 +300,20 @@ class AnalysisService:
             )
         else:
             # Prepare inputs
-            curr_assets = curr_facts.get("TOTAL_ASSETS") or Decimal("100")
+            curr_assets = curr_facts.get("TOTAL_ASSETS") or Decimal(100)
             curr_liab = curr_facts.get("TOTAL_LIABILITIES") or (
-                curr_facts.get("TOTAL_DEBT", Decimal("0"))
-                + curr_facts.get("TRADE_PAYABLES", Decimal("0"))
-                + curr_facts.get("OTHER_CURRENT_LIABILITIES", Decimal("0"))
+                curr_facts.get("TOTAL_DEBT", Decimal(0))
+                + curr_facts.get("TRADE_PAYABLES", Decimal(0))
+                + curr_facts.get("OTHER_CURRENT_LIABILITIES", Decimal(0))
             )
             # Working capital = Current Assets - Current Liabilities
-            wc = curr_facts.get("TRADE_RECEIVABLES", Decimal("0")) + curr_facts.get("INVENTORIES", Decimal("0")) + curr_facts.get("CASH_EQUIVALENTS", Decimal("0")) - curr_facts.get("TRADE_PAYABLES", Decimal("0"))
-            if wc == Decimal("0"):
+            wc = curr_facts.get("TRADE_RECEIVABLES", Decimal(0)) + curr_facts.get("INVENTORIES", Decimal(0)) + curr_facts.get("CASH_EQUIVALENTS", Decimal(0)) - curr_facts.get("TRADE_PAYABLES", Decimal(0))
+            if wc == Decimal(0):
                 wc = Decimal("0.1") * curr_assets
 
-            retained = curr_facts.get("RESERVES") or (curr_facts.get("TOTAL_EQUITY", Decimal("0")) * Decimal("0.8"))
-            ebit = curr_facts.get("EBIT") or (curr_facts.get("EBITDA", Decimal("0")) - curr_facts.get("DEPRECIATION", Decimal("0")))
-            equity = curr_facts.get("TOTAL_EQUITY") or (curr_facts.get("EQUITY_CAPITAL", Decimal("0")) + retained)
+            retained = curr_facts.get("RESERVES") or (curr_facts.get("TOTAL_EQUITY", Decimal(0)) * Decimal("0.8"))
+            ebit = curr_facts.get("EBIT") or (curr_facts.get("EBITDA", Decimal(0)) - curr_facts.get("DEPRECIATION", Decimal(0)))
+            equity = curr_facts.get("TOTAL_EQUITY") or (curr_facts.get("EQUITY_CAPITAL", Decimal(0)) + retained)
 
             z_dict = calculate_altman_z_score(
                 working_capital=wc,
@@ -335,11 +335,11 @@ class AnalysisService:
         # 2. Piotroski F-Score (9 criteria)
         piot_curr = {
             "pat": curr_facts.get("PAT"),
-            "cfo": curr_facts.get("CFO") or (curr_facts.get("PAT", Decimal("0")) * Decimal("1.1")),
+            "cfo": curr_facts.get("CFO") or (curr_facts.get("PAT", Decimal(0)) * Decimal("1.1")),
             "total_assets": curr_facts.get("TOTAL_ASSETS"),
             "long_term_debt": curr_facts.get("LONG_TERM_DEBT") or curr_facts.get("TOTAL_DEBT"),
-            "current_assets": curr_facts.get("TOTAL_ASSETS", Decimal("100")) * Decimal("0.4"),
-            "current_liabilities": curr_facts.get("OTHER_CURRENT_LIABILITIES", Decimal("10")) + curr_facts.get("TRADE_PAYABLES", Decimal("10")),
+            "current_assets": curr_facts.get("TOTAL_ASSETS", Decimal(100)) * Decimal("0.4"),
+            "current_liabilities": curr_facts.get("OTHER_CURRENT_LIABILITIES", Decimal(10)) + curr_facts.get("TRADE_PAYABLES", Decimal(10)),
             "equity_capital": curr_facts.get("EQUITY_CAPITAL"),
             "revenue": curr_facts.get("REVENUE") or curr_facts.get("TOTAL_INCOME"),
         }
@@ -348,8 +348,8 @@ class AnalysisService:
             "cfo": prev_facts.get("CFO"),
             "total_assets": prev_facts.get("TOTAL_ASSETS"),
             "long_term_debt": prev_facts.get("LONG_TERM_DEBT") or prev_facts.get("TOTAL_DEBT"),
-            "current_assets": prev_facts.get("TOTAL_ASSETS", Decimal("100")) * Decimal("0.4"),
-            "current_liabilities": prev_facts.get("OTHER_CURRENT_LIABILITIES", Decimal("10")) + prev_facts.get("TRADE_PAYABLES", Decimal("10")),
+            "current_assets": prev_facts.get("TOTAL_ASSETS", Decimal(100)) * Decimal("0.4"),
+            "current_liabilities": prev_facts.get("OTHER_CURRENT_LIABILITIES", Decimal(10)) + prev_facts.get("TRADE_PAYABLES", Decimal(10)),
             "equity_capital": prev_facts.get("EQUITY_CAPITAL"),
             "revenue": prev_facts.get("REVENUE") or prev_facts.get("TOTAL_INCOME"),
         }
@@ -492,15 +492,15 @@ class AnalysisService:
         assets = latest.get("TOTAL_ASSETS")
 
         # Estimate current assets & current liabilities if not directly broken out
-        ca = latest.get("TRADE_RECEIVABLES", Decimal("0")) + latest.get("INVENTORIES", Decimal("0")) + latest.get("CASH_EQUIVALENTS", Decimal("0"))
-        cl = latest.get("TRADE_PAYABLES", Decimal("0")) + latest.get("OTHER_CURRENT_LIABILITIES", Decimal("0"))
+        ca = latest.get("TRADE_RECEIVABLES", Decimal(0)) + latest.get("INVENTORIES", Decimal(0)) + latest.get("CASH_EQUIVALENTS", Decimal(0))
+        cl = latest.get("TRADE_PAYABLES", Decimal(0)) + latest.get("OTHER_CURRENT_LIABILITIES", Decimal(0))
 
-        if cl == Decimal("0") and assets:
+        if cl == Decimal(0) and assets:
             cl = assets * Decimal("0.2")
-        if ca == Decimal("0") and assets:
+        if ca == Decimal(0) and assets:
             ca = assets * Decimal("0.4")
 
-        inv = latest.get("INVENTORIES", Decimal("0"))
+        inv = latest.get("INVENTORIES", Decimal(0))
 
         de = debt_to_equity(debt, equity)
         icr = interest_coverage(ebit, finance_costs)
@@ -536,7 +536,7 @@ class AnalysisService:
         c_days = creditor_days(pay, opex)
         ccc = cash_conversion_cycle(i_days, d_days, c_days)
 
-        wc = (rec or Decimal("0")) + (inv or Decimal("0")) - (pay or Decimal("0"))
+        wc = (rec or Decimal(0)) + (inv or Decimal(0)) - (pay or Decimal(0))
         wc_days = working_capital_days(wc, revenue)
 
         return OperatingEfficiencyRatios(
@@ -551,10 +551,10 @@ class AnalysisService:
 
     def _compute_banking_ratios(self, latest: dict[str, Decimal]) -> BankingRatios:
         """Calculate regulatory & operating metrics for banks and NBFCs."""
-        nii = latest.get("NII") or (latest.get("INTEREST_EARNED", Decimal("0")) - latest.get("INTEREST_EXPENDED", Decimal("0")))
+        nii = latest.get("NII") or (latest.get("INTEREST_EARNED", Decimal(0)) - latest.get("INTEREST_EXPENDED", Decimal(0)))
         assets = latest.get("TOTAL_ASSETS")
-        opex = latest.get("OPERATING_EXPENSES") or latest.get("EMPLOYEE_EXPENSE", Decimal("0"))
-        total_income = latest.get("TOTAL_INCOME") or (nii + latest.get("OTHER_INCOME", Decimal("0")))
+        opex = latest.get("OPERATING_EXPENSES") or latest.get("EMPLOYEE_EXPENSE", Decimal(0))
+        total_income = latest.get("TOTAL_INCOME") or (nii + latest.get("OTHER_INCOME", Decimal(0)))
 
         nim = net_interest_margin(nii, assets)
         casa = casa_ratio(latest.get("CASA_RATIO"))

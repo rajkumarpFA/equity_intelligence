@@ -1,7 +1,7 @@
 """Pydantic schemas for financial ratios, DuPont analysis, and quality health scores."""
 
-from decimal import Decimal
 from typing import Any
+
 from pydantic import BaseModel, Field
 
 

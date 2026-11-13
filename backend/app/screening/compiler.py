@@ -1,6 +1,5 @@
 """Dynamic AST compiler and condition evaluator for the equity screener."""
 
-from typing import Any
 from app.screening.models import FilterCondition, FilterExpression, ScreenedCompanyItem
 
 FIELD_ALIASES: dict[str, str] = {
@@ -51,9 +50,7 @@ def evaluate_condition(item: ScreenedCompanyItem, condition: FilterCondition) ->
     if val is None:
         if condition.operator == "==" and condition.value is None:
             return True
-        if condition.operator == "!=" and condition.value is not None:
-            return True
-        return False
+        return condition.operator == "!=" and condition.value is not None
 
     op = condition.operator
     target_val = condition.value

@@ -20,9 +20,11 @@ from app.schemas.financial_statements import (
     FinancialStatementMatrixResponse,
     ShareholdingPatternDetail,
 )
+from app.schemas.technicals import CompanyTechnicalsResponse
 from app.services.analysis_service import AnalysisService
 from app.services.company_service import CompanyService
 from app.services.financial_statement_service import FinancialStatementService
+from app.services.technicals_service import TechnicalsService
 
 router = APIRouter(prefix="/companies", tags=["Companies & Stock Discovery"])
 
@@ -249,4 +251,28 @@ def get_company_quality_scores(
         return service.get_company_quality_scores(company_id=company_id, reporting_basis=reporting_basis)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+
+@router.get(
+    "/{company_id}/technicals",
+    response_model=CompanyTechnicalsResponse,
+    summary="Get comprehensive EOD candles, moving averages, RSI, MACD, Bollinger Bands, and technical summary",
+)
+def get_company_technicals(
+    company_id: int,
+    security_id: int | None = Query(None, description="Optional specific security ID"),
+    timeframe: str = Query("1Y", description="1M, 6M, 1Y, 3Y, 5Y, ALL"),
+    db: Session = Depends(get_db),
+) -> CompanyTechnicalsResponse:
+    """Calculate and return full technical indicators suite, historical returns, drawdowns, and pivot points."""
+    service = TechnicalsService(db)
+    try:
+        return service.get_company_technicals(
+            company_id=company_id,
+            security_id=security_id,
+            timeframe=timeframe,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
 

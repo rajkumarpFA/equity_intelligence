@@ -375,5 +375,42 @@ This document tracks all tasks, architectural decisions, completed deliverables,
 ---
 
 ## Phase 10: EOD Charts & Technical Analysis
+- **Status**: Completed & Verified
+- **Scope**: EOD candlestick and volume charts via TradingView Lightweight Charts, mathematical calculation engine for technical indicators (SMA 20/50/200, EMA 12/26, 14-period Wilder-smoothed RSI, MACD 12/26/9, Bollinger Bands 20/2, compounded historical returns, maximum drawdown & 52-week extremes, classical floor trader pivot points), responsive indicators toolbar, and chart tab integration into `/companies/[id]`.
+- **Tasks Done**:
+  - **Mathematical Technical Calculation Engine (`backend/app/calculations/technical.py`)**:
+    - `calculate_sma(prices, window)`: Sliding window SMA with proper `None` padding for insufficient history.
+    - `calculate_ema(prices, window)`: Multiplier $2 / (n + 1)$, initial SMA seed, and exponential weighting.
+    - `calculate_rsi(prices, window)`: Wilder's smoothing method, gains/losses tracking, bounded strictly in $[0, 100]$, and overbought/oversold threshold detection.
+    - `calculate_macd(prices, fast, slow, signal)`: Computes MACD line, 9-period signal line, and histogram ($MACD - Signal$).
+    - `calculate_bollinger_bands(prices, window, num_std)`: 20-period SMA middle band, $\pm 2$ standard deviation upper/lower bands, bandwidth %, and %B position.
+    - `calculate_historical_returns(prices, dates)`: Percentage returns across 1D, 1W, 1M, 3M, 6M, 1Y, and multi-year CAGR (3Y, 5Y).
+    - `calculate_max_drawdown(prices, dates)`: Peak-to-trough decline calculation, peak/trough dates, 52-week High/Low, and current drawdown from 52W High.
+    - `calculate_pivot_points(high, low, close)`: Classical floor trader levels ($PP, R_1, S_1, R_2, S_2, R_3, S_3$) with strict monotonic ordering.
+    - `evaluate_trend_signal(price, sma_50, sma_200)`: Moving average alignment evaluation (Golden Cross vs Death Cross, price relative to 50/200 DMA).
+    - Re-exported in `backend/app/calculations/__init__.py`.
+  - **Pydantic Schemas & Technical Service (`backend/app/schemas/technicals.py`, `backend/app/services/technicals_service.py`)**:
+    - Created `CandleDataPoint`, `IndicatorPoint`, `MACDPoint`, `BollingerBandsPoint`, `HistoricalReturns`, `DrawdownStats`, `PivotPoints`, `TechnicalsSummary`, `CompanyTechnicalsResponse`.
+    - Built `TechnicalsService.get_company_technicals()` querying historical candles from PostgreSQL, dynamically seeding benchmark candles when sparse, executing indicators on full series, slicing response by requested timeframe (`1M`, `6M`, `1Y`, `3Y`, `5Y`, `ALL`), and compiling the technical summary.
+  - **API Endpoints (`backend/app/api/v1/endpoints/companies.py`)**:
+    - Added `GET /api/v1/companies/{id}/technicals?timeframe=1Y&security_id=...`
+  - **Frontend UI & Components (`frontend/src/`)**:
+    - `types/technicals.ts`: TypeScript interfaces matching backend models.
+    - `lib/api-client.ts`: Added `fetchCompanyTechnicals(companyId, timeframe, securityId)`.
+    - `components/company/TechnicalAnalysisTab.tsx`:
+      - **Header Toolbar**: Timeframe selectors (`1M`, `6M`, `1Y`, `3Y`, `5Y`, `ALL`), Chart type toggle (`Candles` vs `Line`), Overlay pills (`20 SMA`, `50 DMA`, `200 DMA`, `BB (20,2)`), Sub-panel toggles (`Volume`, `RSI (14)`, `MACD`).
+      - **Interactive Chart Canvas**: High-precision SVG canvas with crosshair HUD, dynamic price scale, candlestick wicks & bodies, moving average lines, and Bollinger Band fill zone.
+      - **Sub-Panels**: Volume histogram with color-coded bars, RSI 14 oscillator with 70 overbought & 30 oversold boundary lines, MACD histogram & signal lines.
+      - **Technical Summary Dashboard**: Trend signal card with Bullish/Bearish/Neutral badge; Moving averages card with Golden/Death cross status; Volatility card with Squeeze detection; Risk & Drawdown card with 52W High/Low; Historical returns grid; Floor trader pivot levels ladder ($R_3 \dots S_3$).
+    - `app/companies/[id]/page.tsx`: Integrated `{ id: "technicals", label: "Technicals & EOD Charts" }` into the main research navigation tabs.
+- **Test Gate**:
+  - Backend: 89/89 Pytest tests passed (`test_technicals.py` with 11 quantitative formula, service, and API integration tests; all 78 existing tests passing).
+  - Code Quality: `ruff check app tests` passing with 0 errors.
+  - Frontend: 26/26 Vitest tests passed across 9 test suites (`technicals-tab.test.tsx`, `screener.test.tsx`, `analysis-tab.test.tsx`, `company-research.test.tsx`, `data-management.test.tsx`, `discovery.test.tsx`, `health.test.tsx`, `sidebar.test.tsx`, `theme.test.tsx`).
+  - Production Build: Next.js production build succeeded with all 13 routes statically/dynamically compiled (0 errors).
+
+---
+
+## Phase 11: Competitor Analysis
 - **Status**: Ready to Begin
-- **Scope**: EOD candlestick and volume charts via TradingView Lightweight Charts, mathematical calculation engine for technical indicators (SMA, EMA, RSI, MACD, Bollinger Bands, historical returns, drawdowns, support/resistance levels), responsive indicators toolbar, and chart tab integration into `/companies/[id]`.
+- **Scope**: Peer comparison API and `/compare` UI allowing multi-company selection, sector peer groups, relative metric comparison (Revenue, Growth, Margin, ROE, ROCE, D/E, PE, PB, EV/EBITDA), peer benchmarking spider/radar summary, and export.

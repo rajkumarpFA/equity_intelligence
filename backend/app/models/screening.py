@@ -1,6 +1,7 @@
 """SQLAlchemy models for saved screens and screener configurations."""
 
 from datetime import datetime
+
 from sqlalchemy import Boolean, DateTime, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column

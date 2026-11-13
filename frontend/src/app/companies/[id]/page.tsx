@@ -40,6 +40,7 @@ import { ShareholdingViewer } from "@/components/company/ShareholdingViewer";
 import { CorporateActionsTable } from "@/components/company/CorporateActionsTable";
 import { CompanyDocumentsLibrary } from "@/components/company/CompanyDocumentsLibrary";
 import { FundamentalPriceChart } from "@/components/company/FundamentalPriceChart";
+import { TechnicalAnalysisTab } from "@/components/company/TechnicalAnalysisTab";
 import { DeltaChip } from "@/components/common/DeltaChip";
 import { MissingValue } from "@/components/common/MissingValue";
 import { ExchangeBadges } from "@/components/common/ExchangeBadges";
@@ -50,7 +51,7 @@ export default function CompanyDetailPage() {
   const companyId = Number(params?.id);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    "statements" | "analysis" | "shareholding" | "corporate_actions" | "documents" | "suite"
+    "technicals" | "statements" | "analysis" | "shareholding" | "corporate_actions" | "documents" | "suite"
   >("statements");
 
   const {
@@ -315,6 +316,7 @@ export default function CompanyDetailPage() {
                   <div className="flex border-b border-[var(--border)]">
                     <div className="flex flex-wrap gap-2">
                       {[
+                        { id: "technicals", label: "Technicals & EOD Charts" },
                         { id: "statements", label: "Financial Statements" },
                         { id: "analysis", label: "Analysis & Health" },
                         { id: "shareholding", label: "Shareholding Trend" },
@@ -337,6 +339,16 @@ export default function CompanyDetailPage() {
                       ))}
                     </div>
                   </div>
+
+                  {/* Tab 0: Technical Analysis & EOD Charts */}
+                  {activeTab === "technicals" && (
+                    <TechnicalAnalysisTab
+                      companyId={company.id}
+                      companyName={company.name}
+                      symbol={primarySec?.symbol || company.name}
+                      currentPrice={company.current_price}
+                    />
+                  )}
 
                   {/* Tab 1: Financial Statements */}
                   {activeTab === "statements" && (
