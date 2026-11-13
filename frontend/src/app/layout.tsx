@@ -4,9 +4,9 @@ import { Sidebar } from "@/components/common/Sidebar";
 import { QueryProvider } from "@/components/common/QueryProvider";
 
 export const metadata: Metadata = {
-  title: "Equity Intelligence — Indian Stock Research Platform",
+  title: "Equity Intelligence — AI & Quantitative Equity Research Terminal",
   description:
-    "Unified personal research platform for Indian NSE and BSE equity discovery, valuation, and monitoring.",
+    "Developer-grade quantitative research platform for Indian NSE and BSE equities with audited financial statements, DuPont models, and mathematical technical indicators.",
 };
 
 const themeInitScript = `
@@ -26,9 +26,9 @@ export default function RootLayout({
         <meta name="color-scheme" content="dark" />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body className="flex h-screen overflow-hidden bg-[var(--bg-base)] text-[var(--text-1)] antialiased font-sans select-none bg-teal-glow">
+      <body className="flex h-screen overflow-hidden bg-[var(--bg-base)] text-[var(--text-1)] antialiased font-sans select-none">
         <QueryProvider>
-          <div className="flex h-full w-full overflow-hidden bg-matrix-dots">
+          <div className="flex h-full w-full overflow-hidden">
             <Sidebar />
             <div className="flex flex-1 flex-col overflow-hidden min-w-0">
               {children}
