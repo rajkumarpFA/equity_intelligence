@@ -37,6 +37,17 @@ from app.calculations.banking import (
     net_interest_margin,
     npa_pct,
 )
+from app.calculations.technical import (
+    calculate_bollinger_bands,
+    calculate_ema,
+    calculate_historical_returns,
+    calculate_macd,
+    calculate_max_drawdown,
+    calculate_pivot_points,
+    calculate_rsi,
+    calculate_sma,
+    evaluate_trend_signal,
+)
 
 __all__ = [
     "calculate_cagr",
@@ -67,4 +78,13 @@ __all__ = [
     "casa_ratio",
     "npa_pct",
     "capital_adequacy_ratio",
+    "calculate_sma",
+    "calculate_ema",
+    "calculate_rsi",
+    "calculate_macd",
+    "calculate_bollinger_bands",
+    "calculate_historical_returns",
+    "calculate_max_drawdown",
+    "calculate_pivot_points",
+    "evaluate_trend_signal",
 ]
