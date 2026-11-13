@@ -235,7 +235,8 @@ This document tracks all tasks, architectural decisions, completed deliverables,
     - `ShareholdingViewer.tsx`: Quarterly ownership distribution with summary cards, stacked visual progress bar, and detailed table with pledged promoter warnings.
     - `CompanyDocumentsLibrary.tsx`: Stock-level archive of uploaded annual reports and filings with 1-click download.
     - `DataManagementView.tsx`: Added 6th tab `Uploaded Documents Library` (`documents`) for global file audit and downloads across all companies.
-    - `CompanyDetailPage` (`/companies/[id]`): Integrated tabbed navigation bar connecting all Phase 7 components plus the 18-section research suite directory overview.
+    - `CompanyResearchHub.tsx` (`/companies`): Institutional directory hub featuring benchmark equity quick pills (RELIANCE, TCS, HDFCBANK, TATAMOTORS, etc.), live search, sector taxonomy filters, accounting model isolation (Industrial vs Banking), grid vs table view toggle, live EOD pricing & delta chips, and direct deep-dive links into statements, analysis, technicals, and competitor comparison.
+    - `CompanyDetailPage` (`/companies/[id]`): Integrated tabbed navigation bar connecting all Phase 7 components plus the 18-section research suite directory overview (supporting direct deep linking via `?tab=` query parameters).
 - **Test Gate**:
   - Backend: 49/49 Pytest tests passed (`test_statements.py`, `test_integrity.py`, `test_ingestion.py`, `test_companies.py`, `test_providers.py`, `test_health.py`, `test_config.py`).
   - Code Quality: `ruff check app tests` passing with 0 errors.
