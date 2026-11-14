@@ -64,10 +64,10 @@ export function ThemeToggle() {
     return (
       <button
         type="button"
-        className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+        className="flex h-8 w-8 items-center justify-center rounded-pill border border-[var(--border)] bg-[var(--surface)] text-[var(--text-3)]"
         aria-label="Toggle color theme"
       >
-        <Sun className="h-4 w-4" />
+        <Sun className="h-3.5 w-3.5" />
       </button>
     );
   }
@@ -76,14 +76,14 @@ export function ThemeToggle() {
     <button
       type="button"
       onClick={cycleTheme}
-      title={`Theme: ${theme.toUpperCase()} (Click to change)`}
-      className="flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+      title={`Theme: ${theme.toUpperCase()} (Click to toggle)`}
+      className="flex h-8 items-center gap-1.5 rounded-pill border border-[var(--border)] bg-[var(--surface)] px-3 text-xs font-medium text-[var(--text-1)] shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition hover:border-[var(--accent)]"
       aria-label={`Theme: ${theme}`}
     >
       {theme === "dark" && <Moon className="h-3.5 w-3.5 text-indigo-400" />}
       {theme === "light" && <Sun className="h-3.5 w-3.5 text-amber-500" />}
-      {theme === "system" && <Laptop className="h-3.5 w-3.5 text-slate-400" />}
-      <span className="capitalize">{theme}</span>
+      {theme === "system" && <Laptop className="h-3.5 w-3.5 text-[var(--text-3)]" />}
+      <span className="capitalize text-[11px] font-semibold">{theme}</span>
     </button>
   );
 }

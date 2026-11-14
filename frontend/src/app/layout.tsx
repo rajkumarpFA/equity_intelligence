@@ -4,14 +4,22 @@ import { Sidebar } from "@/components/common/Sidebar";
 import { QueryProvider } from "@/components/common/QueryProvider";
 
 export const metadata: Metadata = {
-  title: "Equity Intelligence — AI & Quantitative Equity Research Terminal",
+  title: "Equity Intelligence — Quantitative Equity Research Terminal",
   description:
-    "Developer-grade quantitative research platform for Indian NSE and BSE equities with audited financial statements, DuPont models, and mathematical technical indicators.",
+    "Institutional-grade quantitative equity research terminal for Indian equities with audited financials, multi-model intrinsic valuation, and forensic analysis.",
 };
 
 const themeInitScript = `
 try {
-  document.documentElement.classList.add("dark");
+  const stored = localStorage.getItem("color-scheme");
+  if (stored === "dark") {
+    document.documentElement.classList.add("dark");
+  } else if (stored === "light") {
+    document.documentElement.classList.remove("dark");
+  } else {
+    // Default to Apple Liquid Glass light ground
+    document.documentElement.classList.remove("dark");
+  }
 } catch (e) {}
 `;
 
@@ -21,9 +29,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <head>
-        <meta name="color-scheme" content="dark" />
+        <meta name="color-scheme" content="light dark" />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body className="flex h-screen overflow-hidden bg-[var(--bg-base)] text-[var(--text-1)] antialiased font-sans select-none">

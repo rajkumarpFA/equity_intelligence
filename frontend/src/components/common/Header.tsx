@@ -44,7 +44,7 @@ export function Header({ title, subtitle, breadcrumb, snapshotDate }: HeaderProp
 
   return (
     <>
-      <header className="flex h-16 shrink-0 items-center justify-between border-b border-[var(--border)] bg-[var(--bg-card)]/90 px-6 backdrop-blur-md transition-colors">
+      <header className="glass-nav flex h-14 shrink-0 items-center justify-between px-6 transition-colors sticky top-0 z-40">
         {/* Left: Breadcrumb or Title */}
         <div className="flex items-center gap-3">
           {breadcrumb && breadcrumb.length > 0 ? (
@@ -79,17 +79,17 @@ export function Header({ title, subtitle, breadcrumb, snapshotDate }: HeaderProp
           )}
         </div>
 
-        {/* Center: Global Search Pill (Section 3 Spec: Full radius, ~340-480px, border only) */}
+        {/* Center: Global Search Pill */}
         <div className="hidden md:flex flex-1 max-w-md mx-6">
           <Link
             href="/discover"
-            className="group flex w-full items-center justify-between rounded-[var(--radius-pill)] border border-[var(--border)] bg-[var(--bg-input)] px-4 py-1.5 text-xs text-[var(--text-3)] transition hover:border-white/20"
+            className="group flex w-full items-center justify-between rounded-pill border border-[var(--border)] bg-[var(--surface)] px-4 py-1.5 text-xs text-[var(--text-3)] shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition hover:border-[var(--accent)] hover:shadow-sm"
           >
             <div className="flex items-center gap-2.5">
-              <Search className="h-3.5 w-3.5 text-[var(--text-3)] group-hover:text-[var(--text-1)]" />
+              <Search className="h-3.5 w-3.5 text-[var(--text-3)] group-hover:text-[var(--accent)] transition-colors" />
               <span className="group-hover:text-[var(--text-2)]">Search companies, ISIN, symbols...</span>
             </div>
-            <kbd className="hidden sm:inline-flex items-center rounded border border-[var(--border)] bg-white/5 px-1.5 text-[10px] font-mono font-semibold text-[var(--text-3)]">
+            <kbd className="hidden sm:inline-flex items-center rounded border border-[var(--border)] bg-[var(--hover)] px-1.5 text-[10px] font-mono font-semibold text-[var(--text-3)]">
               ⌘K
             </kbd>
           </Link>

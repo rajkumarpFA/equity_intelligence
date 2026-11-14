@@ -3,55 +3,137 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 
-  /* ------------------------------------------------------------- */
-  /* Voltagent Inspired Design Tokens                              */
-  /* ------------------------------------------------------------- */
+  /* ════════════════════════════════════════════════════════════════
+     Apple Liquid Glass — Design Tokens
+     Ground: Cool grey-white (#f5f5f7)
+     Surfaces: Unified white panels (#ffffff) with two-layer shadows
+     Dividers: Hairline dividers (rgba(0,0,0,0.07))
+     Accent: Apple blue (#0071e3) reserved for emphasis/CTA
+     Glass: Frosted layers (saturate 180% blur 20px) on overlap only
+     ════════════════════════════════════════════════════════════════ */
 
-  /* Canvas & Surface System */
-  --bg-base: #101010;          /* Canvas: unrelenting near-black page background */
-  --bg-card: #141414;          /* Canvas feature card surface */
-  --bg-elevated: #1a1a1a;      /* Canvas-soft: elevated dropdowns, popovers, drawers */
-  --bg-input: #161616;         /* Text inputs & code snippet background */
+  /* ── Neutrals (the interface skeleton) ── */
+  --bg-base: #f5f5f7;          /* Page ground — cool grey-white, never warm/cream */
+  --bg: #f5f5f7;
+  --surface: #ffffff;          /* Panels / cards / unified surfaces */
+  --bg-card: #ffffff;
+  --bg-elevated: #ffffff;
+  --hover: #fbfbfd;            /* Row hover tint */
+  --bg-hover: #fbfbfd;
+  --bg-input: #ffffff;
+  --track: #e8e8ed;            /* Progress / toggle track */
 
-  /* Hairline Borders (1px solid #3d3a39) */
-  --border: #3d3a39;           /* Universal hairline border */
-  --hairline: #3d3a39;
-  --hairline-soft: #b8b3b0;
+  /* ── Hairline Dividers (1px subtle border) ── */
+  --hairline: rgba(0, 0, 0, 0.07);
+  --hairline-soft: rgba(0, 0, 0, 0.04);
+  --border: rgba(0, 0, 0, 0.08);
 
-  /* Single Electric-Green Brand Accent */
-  --accent: #00d992;           /* Primary electric-green (CTA, live status, glyph) */
-  --accent-soft: #2fd6a1;      /* Primary-soft: hover & ghost button text */
-  --accent-deep: #10b981;      /* Primary-deep: inline links */
-  --on-accent: #101010;        /* On-primary: dark text on electric green button */
-  --accent-2: #00d992;         /* Voltagent: single electric-green accent */
-  --neutral-series: #6b7280;
+  /* ── Accents (emphasis ONLY — body stays grayscale) ── */
+  --accent: #0071e3;           /* Apple blue — primary action / link / focus */
+  --accent-soft: #0077ed;
+  --accent-deep: #0066cc;      /* Link / tag text on tinted ground */
+  --accent-link: #0066cc;
+  --on-accent: #ffffff;        /* White text on Apple blue */
+  --indigo: #5e5ce6;           /* Gradient 2nd stop / supporting */
+  --x-blue: #1d9bf0;           /* Platform badge */
+  --heat: #ff6b00;             /* Heat / hottest accent */
+  --heat-bg: rgba(255, 107, 0, 0.1);
+  --live: #30d158;             /* Live / online (pulsing dot) */
 
-  /* Directional Semantics */
-  --up: #00d992;               /* Up / profit direction (electric green) */
-  --down: #ef4444;             /* Down / loss direction */
-  --warn: #f59e0b;             /* Warning / data-quality state */
-  --info: #00d992;             /* Info / live status */
+  /* ── Directional Semantics (Apple HIG) ── */
+  --up: #28cd41;               /* Profit / gain (Apple Green) */
+  --down: #ff3b30;             /* Loss / decline (Apple Red) */
+  --warn: #ff9500;             /* Warning / alert (Apple Amber/Orange) */
+  --info: #0071e3;             /* Info / link (Apple Blue) */
 
-  /* Voltagent Typographic Palette */
-  --text-1: #f2f2f2;           /* Ink: default text on dark canvas */
-  --text-strong: #ffffff;      /* Ink-strong: hero headlines & high emphasis */
-  --text-2: #bdbdbd;           /* Body: secondary long-form text */
-  --text-3: #8b949e;           /* Mute: captions, metadata, fine print */
-  --canvas-text-soft: #f5f6f7; /* Code snippet text */
+  /* ── Typography Palette ── */
+  --text: #1d1d1f;             /* Primary text / titles */
+  --text-1: #1d1d1f;
+  --text-strong: #000000;      /* Hero headlines & strong emphasis */
+  --text-body: #424245;        /* Long-form body */
+  --text-2: #6e6e73;           /* Secondary / summary / meta */
+  --text-3: #86868b;           /* Tertiary / captions */
+  --text-4: #aeaeb2;           /* Placeholder / quaternary */
+  --faint: #d2d2d7;            /* Index numbers, arrows, faint dividers */
 
-  /* Voltagent Shapes (6px buttons/inputs, 8px cards, 9999px pill status tags) */
-  --radius-card: 8px;
-  --radius-input: 6px;
-  --radius-pill: 9999px;
+  /* ── Radius Tiers (Apple semantic tiers) ── */
+  --r-pill: 999px;
+  --radius-pill: 999px;
+  --r-chip: 6px;
+  --r-thumb: 12px;
+  --r-sheet: 16px;
+  --r-card: 18px;
+  --radius-card: 18px;
+  --r-panel: 22px;
+  --r-hero: 26px;
+  --radius-input: 10px;
 
-  /* Typography */
-  --font: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-mono: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  /* ── Shadows (Apple Two-Layer: tight contact + soft spread; never one hard shadow) ── */
+  --sh-card: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.05);
+  --sh-panel: 0 1px 3px rgba(0, 0, 0, 0.05), 0 14px 40px rgba(0, 0, 0, 0.05);
+  --sh-lift: 0 12px 32px rgba(0, 0, 0, 0.10);
+  --sh-cta: 0 20px 54px rgba(0, 113, 227, 0.24);
+  --sh-overlay: 0 2px 8px rgba(0, 0, 0, 0.10), 0 30px 80px rgba(0, 0, 0, 0.24);
+
+  /* ── Signature Gradients (Hero / CTA / Accent only) ── */
+  --grad-blue: linear-gradient(135deg, #0a84ff 0%, #5e5ce6 100%);
+  --grad-cta: linear-gradient(135deg, #0071e3 0%, #5e5ce6 100%);
+  --grad-warm: linear-gradient(135deg, #ff9f0a 0%, #ff375f 100%);
+  --grad-green: linear-gradient(135deg, #30d158 0%, #0a84ff 100%);
+
+  /* ── Typography Stack ── */
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+
+  /* ── Motion & Easing Curves (WWDC Fluid Motion) ── */
+  --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
 
   --background: var(--bg-base);
   --foreground: var(--text-1);
+}
+
+.dark {
+  color-scheme: dark;
+
+  /* ════════════════════════════════════════════════════════════════
+     macOS Dark Mode Liquid Glass
+     ════════════════════════════════════════════════════════════════ */
+  --bg-base: #161618;          /* Dark canvas ground */
+  --bg: #161618;
+  --surface: #1e1e20;          /* Dark panel/card surface */
+  --bg-card: #1e1e20;
+  --bg-elevated: #28282a;
+  --hover: #262628;
+  --bg-hover: #262628;
+  --bg-input: #232325;
+  --track: #2c2c2e;
+
+  --hairline: rgba(255, 255, 255, 0.08);
+  --hairline-soft: rgba(255, 255, 255, 0.05);
+  --border: rgba(255, 255, 255, 0.10);
+
+  --accent: #2997ff;           /* Apple Dark Mode Blue */
+  --accent-soft: #409cff;
+  --accent-deep: #0071e3;
+  --accent-link: #2997ff;
+  --on-accent: #ffffff;
+
+  --text: #f5f5f7;
+  --text-1: #f5f5f7;
+  --text-strong: #ffffff;
+  --text-body: #d2d2d7;
+  --text-2: #a1a1a6;
+  --text-3: #86868b;
+  --text-4: #636366;
+  --faint: #48484a;
+
+  --sh-card: 0 1px 2px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(0, 0, 0, 0.28);
+  --sh-panel: 0 1px 3px rgba(0, 0, 0, 0.40), 0 14px 40px rgba(0, 0, 0, 0.35);
+  --sh-lift: 0 12px 32px rgba(0, 0, 0, 0.45);
+  --sh-overlay: 0 2px 8px rgba(0, 0, 0, 0.40), 0 30px 80px rgba(0, 0, 0, 0.65);
 }
 
 body {
@@ -61,89 +143,136 @@ body {
   margin: 0;
   padding: 0;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
+  font-optical-sizing: auto;
 }
 
 * {
   box-sizing: border-box;
 }
 
-/* Tabular nums for all financial figures and prices */
+/* Tabular numbers for all financial figures and prices */
 .tabular-nums,
 [data-tabular-nums] {
   font-variant-numeric: tabular-nums;
 }
 
-/* Voltagent Eyebrow Uppercase (Inter weight 600 with 2.52px tracking) */
-.eyebrow-mono,
-.eyebrow-uppercase {
-  font-family: var(--font);
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 2.52px;
-  text-transform: uppercase;
+/* ════════════════════════════════════════════════════════════════
+   Liquid Glass Recipes (Seasoning — only where layers overlap)
+   ════════════════════════════════════════════════════════════════ */
+
+/* Sticky Glass Navigation */
+.glass-nav {
+  background: rgba(245, 245, 247, 0.78);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid var(--hairline);
+}
+.dark .glass-nav {
+  background: rgba(22, 22, 24, 0.82);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid var(--hairline);
 }
 
-/* Voltagent Code Mockup / Terminal Block */
-.code-mockup {
-  background-color: var(--bg-base);
-  color: var(--text-1);
-  border: 1px solid var(--border);
-  font-family: var(--font-mono);
-  font-size: 13px;
-  line-height: 18px;
-  border-radius: var(--radius-card);
-  padding: 16px 20px;
+/* Sticky Glass Sidebar */
+.glass-sidebar {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-right: 1px solid var(--hairline);
+}
+.dark .glass-sidebar {
+  background: rgba(30, 30, 32, 0.82);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-right: 1px solid var(--hairline);
 }
 
-/* Voltagent Inline Code Chip */
-.code-inline-chip {
-  background-color: var(--bg-elevated);
-  color: var(--canvas-text-soft);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  border-radius: 4px;
-  padding: 2px 6px;
+/* Glass element on colored ground / CTA */
+.glass-chip {
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
-/* Voltagent Green Divider Band */
-.green-divider {
-  border-top: 2px solid var(--accent);
+/* ════════════════════════════════════════════════════════════════
+   Apple Component Patterns
+   ════════════════════════════════════════════════════════════════ */
+
+/* Unified Panel (Anti-Fragmentation Pattern) */
+.apple-panel {
+  background: var(--surface);
+  border-radius: var(--r-panel);
+  box-shadow: var(--sh-panel);
+  border: 1px solid var(--hairline);
+  overflow: hidden;
 }
 
-/* Voltagent Signature Dashed Divider (quiet rhythm cue between sections) */
-.dashed-divider {
-  border-top: 1px dashed rgba(79, 93, 117, 0.4);
+/* Standard Apple Card */
+.apple-card {
+  background: var(--surface);
+  border-radius: var(--r-card);
+  box-shadow: var(--sh-card);
+  border: 1px solid var(--hairline);
+  transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+}
+.apple-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--sh-lift);
 }
 
-/* Subtle Electric-Green Outer Glow */
-.glow-green {
-  box-shadow: 0 0 16px rgba(0, 217, 146, 0.25);
+/* Apple Button Spring Press */
+button:active:not(:disabled),
+.apple-btn:active:not(:disabled) {
+  transform: scale(0.98);
+  transition: transform 100ms var(--ease-out-quart);
 }
 
-/* Feature card with clean hairline edge */
-.card-feature {
-  background-color: var(--bg-card);
-  color: var(--text-1);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-card);
+/* Row dividers inside unified panels */
+.apple-row + .apple-row {
+  border-top: 1px solid var(--hairline);
+}
+.apple-row:hover {
+  background: var(--hover);
+  transition: background 0.15s ease-out;
 }
 
-/* Sleek dark scrollbar */
+/* Headings negative letter tracking */
+h1 {
+  letter-spacing: -0.03em;
+}
+h2 {
+  letter-spacing: -0.02em;
+}
+h3 {
+  letter-spacing: -0.01em;
+}
+
+/* Live/online pulsing green dot */
+@keyframes pulse-dot {
+  0% { box-shadow: 0 0 0 0 rgba(48, 209, 88, 0.5); }
+  70% { box-shadow: 0 0 0 6px rgba(48, 209, 88, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(48, 209, 88, 0); }
+}
+.pulse-live {
+  animation: pulse-dot 2.2s infinite;
+}
+
+/* Clean Apple Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
-
 ::-webkit-scrollbar-track {
-  background: var(--bg-base);
+  background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: #3d3a39;
+  background: var(--faint);
   border-radius: 9999px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--accent);
+  background: var(--text-3);
 }

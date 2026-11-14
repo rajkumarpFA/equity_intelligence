@@ -45,29 +45,29 @@ export function Sidebar() {
 
   return (
     <aside
-      className="flex h-screen w-64 shrink-0 flex-col border-r border-[var(--border)] bg-[var(--bg-card)] transition-colors select-none"
+      className="glass-sidebar flex h-screen w-64 shrink-0 flex-col transition-colors select-none"
       aria-label="Primary Navigation"
     >
-      {/* Brand Header with Voltagent Electric-Green Zap Glyph */}
-      <div className="flex h-16 items-center gap-3 border-b border-[var(--border)] px-5">
-        <div className="relative flex h-8 w-8 items-center justify-center rounded-md border border-[var(--border)] bg-[#101010] p-0.5 shadow-sm">
-          <Zap className="h-4 w-4 text-[var(--accent)] fill-[var(--accent)]/20" />
-          <span className="absolute -top-1 -right-1 flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--accent)] opacity-75"></span>
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--accent)]"></span>
+      {/* Brand Header with Apple Liquid Glass styling */}
+      <div className="flex h-14 items-center gap-2.5 border-b border-[var(--border)] px-5">
+        <div className="relative flex h-7 w-7 items-center justify-center rounded-[var(--r-chip)] bg-[var(--accent)] text-white shadow-sm">
+          <Zap className="h-4 w-4 fill-white" />
+          <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--live)] opacity-75"></span>
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--live)]"></span>
           </span>
         </div>
         <div>
-          <span className="block text-sm font-bold tracking-tight text-[var(--text-1)]">
+          <span className="block text-sm font-semibold tracking-[-0.01em] text-[var(--text-1)]">
             Equity Intelligence
           </span>
-          <span className="block text-[10px] font-mono font-medium text-[var(--text-3)] tracking-wider uppercase">
-            Quant Research Terminal
+          <span className="block text-[10px] font-mono text-[var(--text-3)] tracking-wider uppercase">
+            Quant Terminal
           </span>
         </div>
       </div>
 
-      {/* Nav items: stacked, active = electric-green border & icon */}
+      {/* Nav items: stacked, active = Apple blue pill with white text */}
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
@@ -81,16 +81,16 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               title={item.name}
-              className={`group flex items-center gap-3 rounded-md px-3 py-2 text-xs font-semibold transition-all ${
+              className={`group flex items-center gap-3 rounded-lg px-3 py-2 text-xs transition-all ${
                 isActive
-                  ? "bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/40 font-bold"
-                  : "text-[var(--text-2)] hover:bg-white/5 hover:text-[var(--text-1)] border border-transparent"
+                  ? "bg-[var(--accent)] text-white font-medium shadow-[0_1px_2px_rgba(0,113,227,0.3)]"
+                  : "text-[var(--text-2)] hover:bg-[var(--hover)] hover:text-[var(--text-1)]"
               }`}
             >
               <div
                 className={`flex h-6 w-6 items-center justify-center rounded transition-all ${
                   isActive
-                    ? "bg-[var(--accent)] text-[#101010] font-bold"
+                    ? "text-white"
                     : "text-[var(--text-3)] group-hover:text-[var(--text-1)]"
                 }`}
               >
@@ -108,37 +108,37 @@ export function Sidebar() {
           <Link
             href="/settings"
             title="Settings"
-            className="flex h-8 w-8 items-center justify-center rounded-md text-[var(--text-3)] hover:bg-white/5 hover:text-[var(--text-1)] transition"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-3)] hover:bg-[var(--hover)] hover:text-[var(--text-1)] transition"
           >
             <Settings className="h-4 w-4" />
           </Link>
           <a
             href="mailto:support@equityintelligence.local"
             title="Support"
-            className="flex h-8 w-8 items-center justify-center rounded-md text-[var(--text-3)] hover:bg-white/5 hover:text-[var(--text-1)] transition"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-3)] hover:bg-[var(--hover)] hover:text-[var(--text-1)] transition"
           >
             <Mail className="h-4 w-4" />
           </a>
           <button
             type="button"
             title="Help & Manual"
-            className="flex h-8 w-8 items-center justify-center rounded-md text-[var(--text-3)] hover:bg-white/5 hover:text-[var(--text-1)] transition"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-3)] hover:bg-[var(--hover)] hover:text-[var(--text-1)] transition"
           >
             <HelpCircle className="h-4 w-4" />
           </button>
           <div
             title="Personal Analyst"
-            className="flex h-6 w-6 items-center justify-center rounded-md bg-[var(--accent)] text-[#101010] font-mono text-[10px] font-bold"
+            className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--accent)] text-white font-mono text-[10px] font-semibold shadow-sm"
           >
             PA
           </div>
         </div>
 
-        <div className="rounded-md border border-[var(--border)] bg-[var(--bg-elevated)] p-2 text-[10px] text-[var(--text-3)] text-center">
-          <span className="font-semibold text-[var(--text-2)] font-mono tracking-wider uppercase">
-            Personal Research Mode
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-2.5 text-[10px] text-[var(--text-3)] text-center shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+          <span className="font-semibold text-[var(--text-1)] font-mono tracking-wider uppercase">
+            Institutional Research
           </span>
-          <p className="text-[10px] text-[var(--text-3)] mt-0.5">Deterministic Python Engine • No Black Boxes</p>
+          <p className="text-[10px] text-[var(--text-3)] mt-0.5">Deterministic Python Engine • Audited Data</p>
         </div>
       </div>
     </aside>
