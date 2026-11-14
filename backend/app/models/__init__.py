@@ -10,6 +10,7 @@ from app.models.ingestion import (
     ValidationResult,
 )
 from app.models.market_data import CorporateAction, PriceHistory, ShareholdingHistory
+from app.models.portfolio import Portfolio, PortfolioHolding, Transaction
 from app.models.screening import SavedScreen
 from app.models.valuation import SavedValuation
 from app.models.workflow import InvestmentNote, Watchlist, WatchlistItem
@@ -25,6 +26,8 @@ __all__ = [
     "Industry",
     "IngestionJob",
     "InvestmentNote",
+    "Portfolio",
+    "PortfolioHolding",
     "PriceHistory",
     "RejectedRecord",
     "SavedScreen",
@@ -33,6 +36,7 @@ __all__ = [
     "Security",
     "ShareholdingHistory",
     "SourceDocument",
+    "Transaction",
     "ValidationResult",
     "Watchlist",
     "WatchlistItem",

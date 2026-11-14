@@ -8,6 +8,7 @@ from app.api.v1.endpoints import (
     ingestion,
     integrity,
     journal,
+    portfolio,
     screening,
     valuation,
     watchlists,
@@ -22,3 +23,4 @@ api_router.include_router(screening.router, prefix="/screening", tags=["screenin
 api_router.include_router(valuation.router)
 api_router.include_router(watchlists.router)
 api_router.include_router(journal.router)
+api_router.include_router(portfolio.router)

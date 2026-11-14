@@ -12,6 +12,7 @@ import {
   Eye,
   Filter,
   LayoutDashboard,
+  PieChart,
   Settings,
   TrendingUp,
   HelpCircle,
@@ -36,6 +37,7 @@ export const NAV_ITEMS: NavItem[] = [
   { name: "Valuation Workbench", href: "/valuation", icon: Calculator },
   { name: "Watchlists", href: "/watchlists", icon: Eye },
   { name: "Investment Journal", href: "/journal", icon: BookOpen },
+  { name: "Portfolio Tracking", href: "/portfolio", icon: PieChart },
   { name: "Data Management", href: "/data-management", icon: Database },
   { name: "Settings", href: "/settings", icon: Settings },
 ];

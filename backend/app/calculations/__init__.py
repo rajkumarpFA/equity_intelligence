@@ -17,6 +17,12 @@ from app.calculations.efficiency import (
     working_capital_days,
 )
 from app.calculations.growth import calculate_cagr, calculate_yoy_growth
+from app.calculations.portfolio import (
+    calculate_asset_allocation,
+    calculate_fifo_lots,
+    calculate_portfolio_beta_alpha,
+    calculate_xirr,
+)
 from app.calculations.profitability import (
     dupont_analysis,
     ebitda_margin,
@@ -62,6 +68,10 @@ __all__ = [
     "calculate_altman_z_score",
     "calculate_bollinger_bands",
     "calculate_cagr",
+    "calculate_asset_allocation",
+    "calculate_fifo_lots",
+    "calculate_portfolio_beta_alpha",
+    "calculate_xirr",
     "calculate_dcf",
     "calculate_dcf_sensitivity_matrix",
     "calculate_dividend_discount_model",

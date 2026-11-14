@@ -8,7 +8,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("Sidebar Navigation", () => {
-  it("renders all 10 specification navigation items", () => {
+  it("renders all specification navigation items", () => {
     render(<Sidebar />);
 
     expect(screen.getByText("Equity Intelligence")).toBeInTheDocument();
@@ -16,6 +16,6 @@ describe("Sidebar Navigation", () => {
     for (const item of NAV_ITEMS) {
       expect(screen.getByText(item.name)).toBeInTheDocument();
     }
-    expect(NAV_ITEMS).toHaveLength(10);
+    expect(NAV_ITEMS).toHaveLength(11);
   });
 });

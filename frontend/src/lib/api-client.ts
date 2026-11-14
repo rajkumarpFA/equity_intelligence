@@ -722,6 +722,106 @@ export async function deleteJournalNote(noteId: number): Promise<void> {
   });
 }
 
+// ---------------------------------------------------------
+// Portfolio Analytics & Tracking APIs (Phase 14)
+// ---------------------------------------------------------
+
+import type {
+  CSVImportResult,
+  Portfolio,
+  PortfolioAnalytics,
+  PortfolioTransaction,
+  TransactionCreatePayload,
+} from "../types/portfolio";
+
+export async function fetchPortfolios(): Promise<Portfolio[]> {
+  return apiFetch<Portfolio[]>("/portfolios");
+}
+
+export async function createPortfolio(payload: {
+  name: string;
+  description?: string;
+  benchmark_symbol?: string;
+  cash_balance?: number;
+}): Promise<Portfolio> {
+  return apiFetch<Portfolio>("/portfolios", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function getPortfolio(portfolioId: number): Promise<Portfolio> {
+  return apiFetch<Portfolio>(`/portfolios/${portfolioId}`);
+}
+
+export async function updatePortfolio(
+  portfolioId: number,
+  payload: { name?: string; description?: string; cash_balance?: number }
+): Promise<Portfolio> {
+  return apiFetch<Portfolio>(`/portfolios/${portfolioId}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deletePortfolio(portfolioId: number): Promise<void> {
+  return apiFetch<void>(`/portfolios/${portfolioId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function fetchPortfolioTransactions(
+  portfolioId: number
+): Promise<PortfolioTransaction[]> {
+  return apiFetch<PortfolioTransaction[]>(`/portfolios/${portfolioId}/transactions`);
+}
+
+export async function addPortfolioTransaction(
+  portfolioId: number,
+  payload: TransactionCreatePayload
+): Promise<PortfolioTransaction> {
+  return apiFetch<PortfolioTransaction>(`/portfolios/${portfolioId}/transactions`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deletePortfolioTransaction(
+  portfolioId: number,
+  transactionId: number
+): Promise<void> {
+  return apiFetch<void>(`/portfolios/${portfolioId}/transactions/${transactionId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function importPortfolioCsv(
+  portfolioId: number,
+  file: File
+): Promise<CSVImportResult> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const url = `${API_BASE_URL}/portfolios/${portfolioId}/import-csv`;
+  const response = await fetch(url, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new ApiError(`CSV Import failed (${response.status}): ${errorBody}`, response.status);
+  }
+  return response.json();
+}
+
+export async function fetchPortfolioAnalytics(
+  portfolioId: number
+): Promise<PortfolioAnalytics> {
+  return apiFetch<PortfolioAnalytics>(`/portfolios/${portfolioId}/analytics`);
+}
+
+
 
 
 
