@@ -38,3 +38,7 @@ backups/
 *.log
 .DS_Store
 Thumbs.db
+
+# Agent Symlink Caches
+.claude/
+agent/
