@@ -32,12 +32,12 @@ export function DeltaChip({
 
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-mono text-xs font-bold tabular-nums ${
+      className={`inline-flex items-center gap-1 rounded-pill px-2 py-0.5 font-mono text-[11px] font-semibold tabular-nums ${
         isZero
-          ? "bg-white/5 text-[var(--text-3)] border border-white/10"
+          ? "bg-[var(--track)] text-[var(--text-3)]"
           : isUp
-          ? "bg-[var(--up)]/10 text-[var(--up)] border border-[var(--up)]/20"
-          : "bg-[var(--down)]/10 text-[var(--down)] border border-[var(--down)]/20"
+          ? "bg-[var(--up)]/10 text-[var(--up)]"
+          : "bg-[var(--down)]/10 text-[var(--down)]"
       } ${className}`}
     >
       {showIcon && (

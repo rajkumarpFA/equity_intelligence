@@ -153,7 +153,7 @@ export default function CompanyDetailPage() {
           {company && (
             <>
               {/* Profile Hero Card */}
-              <div className="rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-sm">
+              <div className="apple-card p-6 shadow-sm">
                 <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
                   <div>
                     <div className="flex items-center gap-2">
@@ -167,7 +167,7 @@ export default function CompanyDetailPage() {
                       )}
                     </div>
                     <div className="mt-2 flex items-center gap-3">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-[var(--bg-card)] to-[var(--accent)]/20 border border-[var(--accent)]/30 font-extrabold text-sm text-[var(--accent)]">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)] font-bold text-sm shadow-sm">
                         {primarySec ? primarySec.symbol.substring(0, 2) : "EQ"}
                       </div>
                       <div>
@@ -303,7 +303,7 @@ export default function CompanyDetailPage() {
                   <div className="flex flex-wrap items-center gap-2 ml-auto">
                     <Link
                       href={`/valuation?company_id=${company.id}`}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-white/5 px-2.5 py-1 text-xs font-semibold text-[var(--text-1)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition shadow-sm"
+                      className="inline-flex items-center gap-1.5 rounded-pill border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-xs font-medium text-[var(--text-1)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
                       title={`Open Valuation Workbench for ${company.name}`}
                     >
                       <Calculator className="h-3.5 w-3.5 text-[var(--accent)]" />
@@ -311,26 +311,26 @@ export default function CompanyDetailPage() {
                     </Link>
                     <Link
                       href={`/watchlists?company_id=${company.id}`}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-white/5 px-2.5 py-1 text-xs font-semibold text-[var(--text-1)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition shadow-sm"
+                      className="inline-flex items-center gap-1.5 rounded-pill border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-xs font-medium text-[var(--text-1)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
                       title={`Add ${company.name} to Watchlist`}
                     >
-                      <Bookmark className="h-3.5 w-3.5 text-primary" />
+                      <Bookmark className="h-3.5 w-3.5 text-[var(--accent)]" />
                       <span>+ Watchlist</span>
                     </Link>
                     <Link
                       href={`/journal?company_id=${company.id}`}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-white/5 px-2.5 py-1 text-xs font-semibold text-[var(--text-1)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition shadow-sm"
+                      className="inline-flex items-center gap-1.5 rounded-pill border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-xs font-medium text-[var(--text-1)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
                       title={`Log Thesis or Notes for ${company.name}`}
                     >
-                      <BookOpen className="h-3.5 w-3.5 text-blue-400" />
+                      <BookOpen className="h-3.5 w-3.5 text-[var(--indigo)]" />
                       <span>+ Journal</span>
                     </Link>
                     <Link
                       href={`/compare?companies=${company.id}`}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--accent)]/30 bg-[var(--accent)]/10 px-3 py-1 text-xs font-bold text-[var(--accent)] hover:bg-[var(--accent)]/20 transition shadow-sm"
+                      className="inline-flex items-center gap-1.5 rounded-pill bg-[var(--accent)] px-3 py-1 text-xs font-semibold text-white hover:bg-[var(--accent-soft)] transition shadow-[0_1px_2px_rgba(0,113,227,0.3)]"
                       title={`Open Competitor Analysis for ${company.name}`}
                     >
-                      <Users className="h-3.5 w-3.5" />
+                      <Users className="h-3.5 w-3.5 text-white" />
                       <span>Compare</span>
                     </Link>
                   </div>

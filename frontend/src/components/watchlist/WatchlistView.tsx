@@ -633,20 +633,21 @@ export function WatchlistView() {
 
       {/* ─── Modal: Add Stock to Watchlist ─────────────────────────────────── */}
       {isAddItemOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-          <div className="bg-canvas-card border border-hairline rounded-md p-6 max-w-lg w-full space-y-4">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="apple-card p-6 max-w-lg w-full space-y-4 shadow-overlay">
             <h3 className="text-base font-normal text-ink-strong">Add Stock to Watchlist</h3>
 
             {/* Company Search */}
             <div className="space-y-1">
-              <label className="text-[11px] font-mono text-mute">SEARCH STOCK</label>
+              <label htmlFor="watchlist-search-stock" className="text-[11px] font-mono text-mute">SEARCH STOCK</label>
               <div className="relative">
                 <input
+                  id="watchlist-search-stock"
                   type="text"
                   placeholder="Search by symbol or name (e.g. RELIANCE, TCS)..."
                   value={itemSearchQuery}
                   onChange={(e) => setItemSearchQuery(e.target.value)}
-                  className="w-full bg-canvas-soft border border-hairline rounded px-3 py-2 text-xs text-ink focus:border-primary focus:outline-none"
+                  className="w-full bg-canvas-soft border border-hairline rounded-lg px-3 py-2 text-xs text-ink focus:border-primary focus:outline-none"
                 />
                 {itemSearchResults.length > 0 && (
                   <div className="absolute top-full left-0 right-0 mt-1 bg-canvas-card border border-hairline rounded shadow-xl z-50 overflow-hidden divide-y divide-hairline">
@@ -687,23 +688,25 @@ export function WatchlistView() {
             {/* Target Prices & Conviction */}
             <div className="grid grid-cols-2 gap-4 text-xs font-mono">
               <div>
-                <label className="text-mute block mb-1">TARGET ENTRY (₹)</label>
+                <label htmlFor="watchlist-target-entry" className="text-mute block mb-1">TARGET ENTRY (₹)</label>
                 <input
+                  id="watchlist-target-entry"
                   type="number"
                   placeholder="e.g. 1250"
                   value={entryTarget}
                   onChange={(e) => setEntryTarget(e.target.value)}
-                  className="w-full bg-canvas-soft border border-hairline rounded px-3 py-2 text-ink focus:border-primary focus:outline-none"
+                  className="w-full bg-canvas-soft border border-hairline rounded-lg px-3 py-2 text-ink focus:border-primary focus:outline-none"
                 />
               </div>
               <div>
-                <label className="text-mute block mb-1">TARGET EXIT (₹)</label>
+                <label htmlFor="watchlist-target-exit" className="text-mute block mb-1">TARGET EXIT (₹)</label>
                 <input
+                  id="watchlist-target-exit"
                   type="number"
                   placeholder="e.g. 1800"
                   value={exitTarget}
                   onChange={(e) => setExitTarget(e.target.value)}
-                  className="w-full bg-canvas-soft border border-hairline rounded px-3 py-2 text-ink focus:border-primary focus:outline-none"
+                  className="w-full bg-canvas-soft border border-hairline rounded-lg px-3 py-2 text-ink focus:border-primary focus:outline-none"
                 />
               </div>
             </div>

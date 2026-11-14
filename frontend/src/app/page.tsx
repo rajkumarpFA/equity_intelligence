@@ -211,7 +211,7 @@ export default function DashboardPage() {
                   {companies.slice(0, 5).map((stock) => (
                     <div
                       key={stock.id}
-                      className="flex items-center justify-between py-2.5 px-2 rounded-lg hover:bg-white/[0.03] transition"
+                      className="flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-[var(--hover)] transition"
                     >
                       <div className="flex items-center gap-3">
                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 font-mono text-xs font-bold text-[var(--text-2)]">
@@ -265,7 +265,7 @@ export default function DashboardPage() {
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 {/* Left: Chart & Stats Card (Span 8) */}
                 <div className="lg:col-span-8 space-y-4">
-                  <div className="rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--bg-card)] p-5 shadow-sm space-y-4">
+                  <div className="apple-card p-5 space-y-4">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
                         <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-[var(--bg-card)] to-[var(--accent)]/20 border border-[var(--accent)]/30 font-extrabold text-sm text-[var(--accent)]">
@@ -403,7 +403,7 @@ export default function DashboardPage() {
 
                       <Link
                         href={`/companies/${spotlightStock.id}`}
-                        className="block w-full text-center rounded-[var(--radius-input)] bg-[var(--accent)] py-2.5 text-xs font-extrabold text-slate-950 shadow-sm transition hover:bg-[#00bee0]"
+                        className="block w-full text-center rounded-pill bg-[var(--accent)] py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[var(--accent-soft)]"
                       >
                         Open 18-Section Company Research →
                       </Link>
@@ -455,7 +455,7 @@ function IndexCardItem({
     : [100, 102, 101, 103, 104];
 
   return (
-    <div className="relative overflow-hidden rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--bg-card)] p-4 shadow-sm hover:border-white/20 transition">
+    <div className="apple-card relative overflow-hidden p-4 hover:border-[var(--accent)]/30">
       <div className="flex items-start justify-between">
         <div>
           <span className="text-[10px] font-mono font-bold text-[var(--text-3)] block uppercase">

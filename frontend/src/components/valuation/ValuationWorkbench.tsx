@@ -107,39 +107,44 @@ export function ValuationWorkbench() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
 
-  // Load summary on company selection
+  // Load summary on company selection (Parallelized per react-performance)
   useEffect(() => {
     let isMounted = true;
     async function loadData() {
       setLoading(true);
       setError(null);
       try {
-        const sum = await fetchValuationSummary(selectedCompanyId);
-        if (isMounted) {
-          setSummary(sum);
-          setCustomDCFResult(sum.dcf || null);
-          setReverseDCFResult(sum.reverse_dcf || null);
-          setCustomDDM(sum.ddm || null);
-          setCustomGraham(sum.graham || null);
+        const [sumRes, savedRes] = await Promise.allSettled([
+          fetchValuationSummary(selectedCompanyId),
+          fetchSavedValuations(selectedCompanyId),
+        ]);
 
-          // Also load sensitivity matrix
-          try {
-            const sens = await runSensitivityMatrix({
-              company_id: selectedCompanyId,
-              current_price: sum.current_price,
-            });
-            if (isMounted) setSensitivityResult(sens);
-          } catch {
-            // Ignore if sensitivity fails
-          }
+        if (!isMounted) return;
 
-          // Load saved scenarios
-          try {
-            const saved = await fetchSavedValuations(selectedCompanyId);
-            if (isMounted) setSavedScenarios(saved);
-          } catch {
-            // Ignore
-          }
+        if (sumRes.status === "rejected") {
+          throw sumRes.reason;
+        }
+
+        const sum = sumRes.value;
+        setSummary(sum);
+        setCustomDCFResult(sum.dcf || null);
+        setReverseDCFResult(sum.reverse_dcf || null);
+        setCustomDDM(sum.ddm || null);
+        setCustomGraham(sum.graham || null);
+
+        if (savedRes.status === "fulfilled") {
+          setSavedScenarios(savedRes.value);
+        }
+
+        // Load sensitivity matrix
+        try {
+          const sens = await runSensitivityMatrix({
+            company_id: selectedCompanyId,
+            current_price: sum.current_price,
+          });
+          if (isMounted) setSensitivityResult(sens);
+        } catch {
+          // Ignore if sensitivity fails
         }
       } catch (err: any) {
         if (isMounted) {
@@ -333,16 +338,17 @@ export function ValuationWorkbench() {
         {/* Company Quick Switcher & Search */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <div className="relative">
-            <div className="flex items-center gap-2 bg-canvas-soft border border-hairline rounded-sm px-3 py-2 w-full sm:w-64 focus-within:border-primary transition-colors">
-              <Search className="w-4 h-4 text-mute" />
+            <div className="flex items-center gap-2 bg-canvas-soft border border-hairline rounded-pill px-3.5 py-1.5 w-full sm:w-64 focus-within:border-primary transition-all shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+              <Search className="w-4 h-4 text-mute shrink-0" />
               <input
                 type="text"
                 placeholder="Search symbol / company..."
                 value={searchQuery}
+                aria-label="Search company or ticker symbol"
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-transparent border-none text-sm text-ink focus:outline-none w-full"
+                className="bg-transparent border-none text-xs text-ink focus:outline-none w-full"
               />
-              {isSearching && <RefreshCw className="w-3.5 h-3.5 text-mute animate-spin" />}
+              {isSearching && <RefreshCw className="w-3.5 h-3.5 text-mute animate-spin shrink-0" />}
             </div>
 
             {/* Search Dropdown */}
@@ -442,8 +448,8 @@ export function ValuationWorkbench() {
         </div>
       )}
 
-      {/* ─── Navigation Tabs ──────────────────────────────────────────────── */}
-      <div className="flex border-b border-hairline gap-2 overflow-x-auto text-sm">
+      {/* ─── Navigation Tabs (Apple Segmented Pill Control) ───────────────── */}
+      <div className="inline-flex bg-slate-200/50 dark:bg-white/10 p-1 rounded-pill gap-1 overflow-x-auto max-w-full border border-hairline">
         {[
           { key: "summary", label: "Consensus Summary" },
           { key: "dcf", label: "DCF & Scenarios" },
@@ -456,10 +462,10 @@ export function ValuationWorkbench() {
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key as any)}
-            className={`pb-3 px-3 font-medium transition-colors border-b-2 -mb-[2px] whitespace-nowrap ${
+            className={`px-3.5 py-1.5 rounded-pill text-xs transition-all whitespace-nowrap ${
               activeTab === tab.key
-                ? "border-primary text-primary"
-                : "border-transparent text-mute hover:text-ink"
+                ? "bg-[var(--surface)] text-[var(--text-1)] shadow-sm font-semibold"
+                : "text-[var(--text-2)] hover:text-[var(--text-1)] font-medium"
             }`}
           >
             {tab.label}

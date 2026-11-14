@@ -252,18 +252,18 @@ export function JournalView() {
         </button>
       </div>
 
-      {/* ─── Filter Pills Bar ──────────────────────────────────────────────── */}
-      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 bg-canvas-card border border-hairline rounded-md p-4">
+      {/* ─── Filter Pills Bar (Apple Segmented Control) ────────────────────── */}
+      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 apple-card p-3">
         {/* Category Pills */}
-        <div className="flex items-center gap-2 overflow-x-auto text-xs font-mono">
+        <div className="inline-flex bg-slate-200/50 dark:bg-white/10 p-1 rounded-pill gap-1 overflow-x-auto text-xs border border-hairline">
           {CATEGORIES.map((cat) => (
             <button
               key={cat.key}
               onClick={() => setActiveCategory(cat.key)}
-              className={`px-3 py-1.5 rounded-pill border transition-all whitespace-nowrap ${
+              className={`px-3 py-1 rounded-pill transition-all whitespace-nowrap text-xs font-medium ${
                 activeCategory === cat.key
-                  ? "bg-primary text-on-primary border-primary font-medium"
-                  : "bg-canvas-soft text-body border-hairline hover:border-mute"
+                  ? "bg-[var(--surface)] text-[var(--text-1)] shadow-sm font-semibold"
+                  : "text-[var(--text-2)] hover:text-[var(--text-1)]"
               }`}
             >
               {cat.label}
@@ -277,9 +277,10 @@ export function JournalView() {
             <input
               type="text"
               placeholder="Search thesis, symbols..."
+              aria-label="Search investment journal notes and symbols"
               value={filterSearch}
               onChange={(e) => setFilterSearch(e.target.value)}
-              className="w-full bg-canvas-soft border border-hairline rounded px-3 py-1.5 text-xs text-ink focus:border-primary focus:outline-none"
+              className="w-full bg-canvas-soft border border-hairline rounded-pill px-3.5 py-1.5 text-xs text-ink focus:border-primary focus:outline-none"
             />
           </div>
 
