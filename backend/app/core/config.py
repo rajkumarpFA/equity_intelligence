@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     db_pool_size: int = 5
     db_max_overflow: int = 10
 
-    cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
+    cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001"
     storage_dir: Path = Path("/app/storage")
     max_upload_size_mb: int = 50
 
@@ -48,6 +48,12 @@ class Settings(BaseSettings):
     def cors_origin_list(self) -> list[str]:
         """Return normalized list of allowed CORS origins."""
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+
+    @property
+    def sanitized_database_url(self) -> str:
+        """Return database URL with credentials safely masked."""
+        import re
+        return re.sub(r"://([^:]+):([^@]+)@", r"://\1:***@", self.database_url)
 
     @property
     def effective_storage_dir(self) -> Path:

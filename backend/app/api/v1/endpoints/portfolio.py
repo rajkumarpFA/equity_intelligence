@@ -171,8 +171,23 @@ async def import_broker_csv(
     db: Session = Depends(get_db),
 ) -> CSVImportResponse:
     """Import trades from a broker tradebook CSV file (Zerodha Kite or Groww format)."""
+    if not file.filename or not file.filename.lower().endswith(".csv"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid file extension. Broker tradebook must be a .csv file, got '{file.filename}'",
+        )
+
+    # Enforce maximum upload size limit (15MB)
+    max_bytes = 15 * 1024 * 1024
+    content_bytes = await file.read(max_bytes + 1)
+    if len(content_bytes) > max_bytes:
+        raise HTTPException(
+            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+            detail="Broker CSV upload exceeds maximum allowed limit of 15 MB",
+        )
+
+    content = content_bytes.decode("utf-8", errors="replace")
     service = PortfolioService(db)
-    content = (await file.read()).decode("utf-8", errors="replace")
     try:
         res = service.import_broker_csv(portfolio_id, content)
         return CSVImportResponse(**res)

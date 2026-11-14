@@ -38,9 +38,9 @@ export default function RootLayout({
         <QueryProvider>
           <div className="flex h-full w-full overflow-hidden">
             <Sidebar />
-            <div className="flex flex-1 flex-col overflow-hidden min-w-0">
+            <main className="flex flex-1 flex-col overflow-hidden min-w-0" role="main">
               {children}
-            </div>
+            </main>
           </div>
         </QueryProvider>
       </body>

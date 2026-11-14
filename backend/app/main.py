@@ -46,13 +46,28 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+cors_origins = list(settings.cors_origin_list)
+for dev_origin in ["http://localhost:3001", "http://127.0.0.1:3001"]:
+    if dev_origin not in cors_origins:
+        cors_origins.append(dev_origin)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origin_list,
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def add_security_headers(request, call_next):
+    """Add defensive security headers to all HTTP responses."""
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    return response
 
 app.include_router(api_router, prefix="/api/v1")
 

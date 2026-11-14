@@ -192,7 +192,10 @@ async def upload_report(
         response.is_duplicate = not is_new
         return response
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        msg = str(e)
+        if "exceeds maximum allowed limit" in msg:
+            raise HTTPException(status_code=status.HTTP_413_CONTENT_TOO_LARGE, detail=msg)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=msg)
     except Exception as e:  # noqa: BLE001
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Upload failed: {e!s}")
 

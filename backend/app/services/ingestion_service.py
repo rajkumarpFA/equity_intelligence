@@ -385,6 +385,12 @@ class IngestionService:
             )
 
         # 2. File type validation
+        allowed_extensions = {".pdf", ".csv", ".txt", ".json"}
+        _, ext = os.path.splitext(filename.lower())
+
+        if ext not in allowed_extensions:
+            raise ValueError(f"Unsupported file type / extension '{ext}'. Allowed: PDF, CSV, TXT, JSON.")
+
         allowed_mimes = {
             "application/pdf",
             "text/csv",
@@ -392,11 +398,12 @@ class IngestionService:
             "application/json",
             "application/octet-stream",
         }
-        allowed_extensions = {".pdf", ".csv", ".txt", ".json"}
-        _, ext = os.path.splitext(filename.lower())
+        if mime_type and mime_type not in allowed_mimes:
+            raise ValueError(f"Unsupported MIME type '{mime_type}'.")
 
-        if ext not in allowed_extensions and mime_type not in allowed_mimes:
-            raise ValueError(f"Unsupported file type '{ext}' ({mime_type}). Allowed: PDF, CSV, TXT, JSON.")
+        # Magic bytes check for PDF
+        if ext == ".pdf" and not file_bytes.startswith(b"%PDF-"):
+            raise ValueError("Corrupt or invalid PDF file header (missing '%PDF-').")
 
         # 3. Calculate SHA-256 hash
         sha256_hash = hashlib.sha256(file_bytes).hexdigest()

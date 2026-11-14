@@ -718,7 +718,7 @@ export function PortfolioDashboard() {
       {/* ───────────────────────────────────────────────────────── */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="apple-card w-full max-w-md p-6 shadow-overlay animate-in fade-in zoom-in-95 duration-200">
+          <div role="dialog" aria-modal="true" aria-label="Create New Portfolio" className="apple-card w-full max-w-md p-6 shadow-overlay animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between pb-3 border-b border-hairline">
               <h3 className="text-sm font-semibold text-[var(--text-1)]">Create New Portfolio</h3>
               <button
@@ -785,7 +785,7 @@ export function PortfolioDashboard() {
       {/* ───────────────────────────────────────────────────────── */}
       {showTradeModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="apple-card w-full max-w-lg p-6 shadow-overlay animate-in fade-in zoom-in-95 duration-200">
+          <div role="dialog" aria-modal="true" aria-label="Log Portfolio Transaction" className="apple-card w-full max-w-lg p-6 shadow-overlay animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between pb-3 border-b border-hairline">
               <h3 className="text-sm font-semibold text-[var(--text-1)]">Log Portfolio Transaction</h3>
               <button
@@ -931,7 +931,7 @@ export function PortfolioDashboard() {
       {/* ───────────────────────────────────────────────────────── */}
       {showImportModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="apple-card w-full max-w-md p-6 shadow-overlay animate-in fade-in zoom-in-95 duration-200">
+          <div role="dialog" aria-modal="true" aria-label="Import Broker CSV Tradebook" className="apple-card w-full max-w-md p-6 shadow-overlay animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between pb-3 border-b border-hairline">
               <h3 className="text-sm font-semibold text-[var(--text-1)]">Import Broker CSV Tradebook</h3>
               <button
@@ -999,7 +999,7 @@ export function PortfolioDashboard() {
       {/* ───────────────────────────────────────────────────────── */}
       {showLedgerModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="apple-card w-full max-w-3xl max-h-[80vh] flex flex-col p-6 shadow-overlay animate-in fade-in zoom-in-95 duration-200">
+          <div role="dialog" aria-modal="true" aria-label="Transaction Ledger" className="apple-card w-full max-w-3xl max-h-[80vh] flex flex-col p-6 shadow-overlay animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between pb-3 border-b border-hairline">
               <div>
                 <h3 className="text-sm font-semibold text-[var(--text-1)]">

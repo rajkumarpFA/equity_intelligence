@@ -83,6 +83,7 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               title={item.name}
+              aria-current={isActive ? "page" : undefined}
               className={`group flex items-center gap-3 rounded-lg px-3 py-2 text-xs transition-all ${
                 isActive
                   ? "bg-[var(--accent)] text-white font-medium shadow-[0_1px_2px_rgba(0,113,227,0.3)]"
@@ -110,7 +111,12 @@ export function Sidebar() {
           <Link
             href="/settings"
             title="Settings"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-3)] hover:bg-[var(--hover)] hover:text-[var(--text-1)] transition"
+            aria-current={pathname === "/settings" ? "page" : undefined}
+            className={`flex h-8 w-8 items-center justify-center rounded-lg transition ${
+              pathname === "/settings"
+                ? "bg-[var(--accent)] text-white shadow-[0_1px_2px_rgba(0,113,227,0.3)]"
+                : "text-[var(--text-3)] hover:bg-[var(--hover)] hover:text-[var(--text-1)]"
+            }`}
           >
             <Settings className="h-4 w-4" />
           </Link>
